@@ -1,10 +1,12 @@
+export type EmploymentType = "Full-time" | "Part-time" | "Internship" | "NSS";
+
 export type ResponseType = "text" | "audio";
 
 export interface Job {
   id: string;
   title: string;
   location: string;
-  employmentType: string;
+  employmentType: EmploymentType;
   description: string;
 }
 
@@ -18,13 +20,13 @@ export interface Question {
 export interface Screening {
   id: string;
   jobId: string;
+  createdAt: string;
   questions: Question[];
-  allowBack?: boolean;
-  responseMode?: "text" | "audio" | "demo";
 }
 
 export interface Answer {
   questionId: string;
+  responseType: ResponseType;
   value: string;
 }
 

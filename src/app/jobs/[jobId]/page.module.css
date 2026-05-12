@@ -1,0 +1,43 @@
+.container {
+  padding: 24px;
+}
+
+.back {
+  margin-bottom: 12px;
+  cursor: pointer;
+  background: none;
+  border: none;
+  color: blue;
+}
+
+.title {
+  font-size: 22px;
+  font-weight: 600;
+}
+
+.meta {
+  color: gray;
+  font-size: 12px;
+  margin-top: 4px;
+}
+
+.desc {
+  margin-top: 12px;
+  font-size: 14px;
+}
+
+.actions {
+  margin-top: 16px;
+}
+
+.primary {
+  padding: 8px 12px;
+  background: black;
+  color: white;
+  border: none;
+  cursor: pointer;
+}
+
+.section {
+  margin-top: 24px;
+}
