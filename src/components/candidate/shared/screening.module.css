@@ -1,0 +1,49 @@
+.container {
+  max-width: 720px;
+  margin: 40px auto;
+  padding: 24px;
+}
+
+.card {
+  background: white;
+  border-radius: 12px;
+  border: 1px solid #e5e7eb;
+  overflow: hidden;
+}
+
+.accentBar {
+  height: 8px;
+  background: #ff784b;
+}
+
+.title {
+  font-size: 24px;
+  font-weight: 600;
+  margin-bottom: 16px;
+}
+
+.subtitle {
+  font-size: 14px;
+  color: #6b7280;
+}
+
+.input {
+  width: 100%;
+  padding: 12px;
+  border: 1px solid #d1d5db;
+  border-radius: 8px;
+}
+
+.button {
+  background: #ff784b;
+  color: white;
+  padding: 10px 18px;
+  border-radius: 999px;
+  border: none;
+  cursor: pointer;
+}
+
+.buttonSecondary {
+  background: transparent;
+  color: #6b7280;
+}

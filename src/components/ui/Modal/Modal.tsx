@@ -30,13 +30,7 @@ export default function Modal({ isOpen, onClose, children }: ModalProps) {
     <div className={styles.overlay}>
       <div className={styles.backdrop} onClick={onClose} />
 
-      <div className={styles.modal}>
-        <button className={styles.closeButton} onClick={onClose}>
-          ✕
-        </button>
-
-        {children}
-      </div>
+      <div className={styles.modal}>{children}</div>
     </div>
   );
 }

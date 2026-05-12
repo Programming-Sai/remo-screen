@@ -1,13 +1,15 @@
 "use client";
 
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
+
 import Modal from "@/components/ui/Modal/Modal";
 
 import { jobs } from "@/data/jobs";
 import { generateQuestions } from "@/data/questions";
 
 import { Question, ResponseType, Screening } from "@/types";
+
 import { saveScreening } from "@/lib/storage";
 
 import styles from "./CreateScreeningModal.module.css";
@@ -26,8 +28,14 @@ export default function CreateScreeningModal({
   const router = useRouter();
 
   const [selectedJobId, setSelectedJobId] = useState(jobId ?? "");
+
   const [questions, setQuestions] = useState<Question[]>([]);
+
   const [loading, setLoading] = useState(false);
+
+  const selectedJob = useMemo(() => {
+    return jobs.find((job) => job.id === selectedJobId);
+  }, [selectedJobId]);
 
   function handleGenerateQuestions() {
     if (!selectedJobId) return;
@@ -37,32 +45,44 @@ export default function CreateScreeningModal({
     setTimeout(() => {
       const generated = generateQuestions(selectedJobId);
 
-      const formattedQuestions: Question[] = generated.map((q) => ({
-        id: crypto.randomUUID(),
-        text: q,
-        responseType: "text",
-        isCustom: false,
-      }));
+      const formattedQuestions: Question[] = generated.map(
+        (question, index) => ({
+          id: crypto.randomUUID(),
+          text: question,
+          responseType: index === 0 ? "audio" : "text",
+          isCustom: false,
+        }),
+      );
 
       setQuestions(formattedQuestions);
+
       setLoading(false);
-    }, 700);
+    }, 800);
   }
 
   function handleQuestionTextChange(id: string, value: string) {
     setQuestions((prev) =>
-      prev.map((q) => (q.id === id ? { ...q, text: value } : q)),
+      prev.map((question) =>
+        question.id === id ? { ...question, text: value } : question,
+      ),
     );
   }
 
   function handleResponseTypeChange(id: string, value: ResponseType) {
     setQuestions((prev) =>
-      prev.map((q) => (q.id === id ? { ...q, responseType: value } : q)),
+      prev.map((question) =>
+        question.id === id
+          ? {
+              ...question,
+              responseType: value,
+            }
+          : question,
+      ),
     );
   }
 
   function handleRemoveQuestion(id: string) {
-    setQuestions((prev) => prev.filter((q) => q.id !== id));
+    setQuestions((prev) => prev.filter((question) => question.id !== id));
   }
 
   function handleAddCustomQuestion() {
@@ -77,31 +97,47 @@ export default function CreateScreeningModal({
   }
 
   function handleSaveScreening() {
-    if (!selectedJobId) return;
+    if (!selectedJobId || questions.length === 0) {
+      return;
+    }
 
     const screening: Screening = {
       id: crypto.randomUUID(),
-      jobId: selectedJobId,
       createdAt: new Date().toISOString(),
+      jobId: selectedJobId,
       questions,
     };
 
     saveScreening(screening);
 
     onClose();
+
     router.push(`/jobs/${selectedJobId}`);
   }
 
   return (
     <Modal isOpen={isOpen} onClose={onClose}>
-      <div className={styles.container}>
-        <h2>Create Phone Screening</h2>
+      <div className={styles.header}>
+        <div>
+          <h2 className={styles.title}>Create Phone Screening</h2>
 
+          <p className={styles.subtitle}>
+            Generate and customize screening questions.
+          </p>
+        </div>
+
+        <button className={styles.closeButton} onClick={onClose}>
+          ✕
+        </button>
+      </div>
+
+      <div className={styles.body}>
         {!jobId && (
-          <div className={styles.section}>
-            <label>Select Job</label>
+          <section className={styles.section}>
+            <label className={styles.label}>Job Posting</label>
 
             <select
+              className={styles.select}
               value={selectedJobId}
               onChange={(e) => setSelectedJobId(e.target.value)}
             >
@@ -113,44 +149,115 @@ export default function CreateScreeningModal({
                 </option>
               ))}
             </select>
-          </div>
+          </section>
         )}
 
-        <div className={styles.section}>
-          <button onClick={handleGenerateQuestions}>Generate Questions</button>
+        <section className={styles.generateSection}>
+          <div className={styles.generateText}>
+            <h3>Generate screening questions with AI</h3>
 
-          {loading && <p>Generating questions...</p>}
-        </div>
+            <p>
+              Questions are tailored to the role requirements and communication
+              style.
+            </p>
+          </div>
 
-        <div className={styles.questions}>
-          {questions.map((q) => (
-            <div key={q.id} className={styles.questionCard}>
-              <input
-                type="text"
-                value={q.text}
-                onChange={(e) => handleQuestionTextChange(q.id, e.target.value)}
-              />
+          <button
+            className={styles.generateButton}
+            onClick={handleGenerateQuestions}
+            disabled={!selectedJobId || loading}
+          >
+            {loading ? "Generating questions..." : "Generate Questions"}
+          </button>
+        </section>
 
-              <select
-                value={q.responseType}
-                onChange={(e) =>
-                  handleResponseTypeChange(q.id, e.target.value as ResponseType)
-                }
-              >
-                <option value="text">Text</option>
-                <option value="audio">Audio</option>
-              </select>
-
-              <button onClick={() => handleRemoveQuestion(q.id)}>Remove</button>
+        {questions.length > 0 && (
+          <section className={styles.questionsSection}>
+            <div className={styles.questionsHeader}>
+              <h4>Screening Questions ({questions.length})</h4>
             </div>
-          ))}
-        </div>
 
-        <div className={styles.actions}>
-          <button onClick={handleAddCustomQuestion}>Add Custom Question</button>
+            <div className={styles.questions}>
+              {questions.map((question) => (
+                <div key={question.id} className={styles.questionCard}>
+                  <div className={styles.questionTop}>
+                    <textarea
+                      rows={3}
+                      className={styles.questionInput}
+                      placeholder="Enter question text..."
+                      value={question.text}
+                      onChange={(e) =>
+                        handleQuestionTextChange(question.id, e.target.value)
+                      }
+                    />
 
-          <button onClick={handleSaveScreening}>Save Screening</button>
-        </div>
+                    <button
+                      className={styles.removeButton}
+                      onClick={() => handleRemoveQuestion(question.id)}
+                    >
+                      ✕
+                    </button>
+                  </div>
+
+                  <div className={styles.questionFooter}>
+                    <span className={styles.responseLabel}>Response Type</span>
+
+                    <select
+                      className={styles.responseSelect}
+                      value={question.responseType}
+                      onChange={(e) =>
+                        handleResponseTypeChange(
+                          question.id,
+                          e.target.value as ResponseType,
+                        )
+                      }
+                    >
+                      <option value="text">Text</option>
+
+                      <option value="audio">Audio</option>
+                    </select>
+                  </div>
+
+                  {question.responseType === "audio" && (
+                    <div className={styles.audioPreview}>
+                      <div className={styles.audioIcon}>🎤</div>
+
+                      <div>
+                        <p>Audio response enabled</p>
+
+                        <span>
+                          Candidates will record an audio response for this
+                          question.
+                        </span>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              ))}
+            </div>
+
+            <button
+              className={styles.addButton}
+              onClick={handleAddCustomQuestion}
+            >
+              + Add Custom Question
+            </button>
+          </section>
+        )}
+      </div>
+
+      <div className={styles.footer}>
+        <button className={styles.secondaryButton} onClick={onClose}>
+          Discard
+        </button>
+
+        <button
+          className={styles.primaryButton}
+          onClick={handleSaveScreening}
+          disabled={!selectedJobId || questions.length === 0}
+        >
+          Save Screening
+        </button>
       </div>
     </Modal>
   );

@@ -1,11 +1,18 @@
 "use client";
 
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
+
 import { jobs } from "@/data/jobs";
 import { getScreeningByJobId, saveSubmission } from "@/lib/storage";
-import { Answer, Submission } from "@/types";
-import styles from "./page.module.css";
+import { Submission } from "@/types";
+
+import ScreeningShell from "@/components/candidate/ScreeningShell/ScreeningShell";
+import ScreeningWelcomeStep from "@/components/candidate/ScreeningWelcomeStep/ScreeningWelcomeStep";
+import ScreeningQuestionStep from "@/components/candidate/ScreeningQuestionStep/ScreeningQuestionStep";
+import ScreeningCompletionStep from "@/components/candidate/ScreeningCompletionStep/ScreeningCompletionStep";
+
+type ScreenState = "welcome" | "question" | "complete";
 
 export default function ScreeningPage() {
   const params = useParams();
@@ -13,109 +20,106 @@ export default function ScreeningPage() {
 
   const jobId = params?.jobId as string;
 
-  const job = jobs.find((j) => j.id === jobId);
+  const job = useMemo(() => jobs.find((j) => j.id === jobId), [jobId]);
   const screening = getScreeningByJobId(jobId);
 
-  const [step, setStep] = useState(0);
-  const [name, setName] = useState("");
-  const [email, setEmail] = useState("");
-  const [answers, setAnswers] = useState<Answer[]>([]);
-  const [started, setStarted] = useState(false);
+  const [state, setState] = useState<ScreenState>("welcome");
+  const [questionIndex, setQuestionIndex] = useState(0);
+  const [candidateName, setCandidateName] = useState("");
+  const [candidateEmail, setCandidateEmail] = useState("");
+  const [answers, setAnswers] = useState<Record<string, string>>({});
 
   if (!job) return <p>Job not found</p>;
   if (!screening) return <p>No screening found</p>;
 
   const questions = screening.questions;
-  const current = questions[step];
+  const currentQuestion = questions[questionIndex];
+  const currentValue = answers[currentQuestion?.id] ?? "";
+  const progressPercent = Math.round(
+    ((questionIndex + 1) / questions.length) * 100,
+  );
 
-  function start() {
-    if (!name.trim() || !email.trim()) return;
-    setStarted(true);
+  function startScreening() {
+    if (!candidateName.trim() || !candidateEmail.trim()) return;
+    setState("question");
+    setQuestionIndex(0);
   }
 
-  function handleAnswer(value: string) {
-    const trimmed = value.trim();
-    if (!trimmed) return;
+  function setAnswer(questionId: string, value: string) {
+    setAnswers((prev) => ({
+      ...prev,
+      [questionId]: value,
+    }));
+  }
 
-    const newAnswer: Answer = {
-      questionId: current.id,
-      responseType: current.responseType,
-      value: trimmed,
-    };
+  function handleNext() {
+    const value = (answers[currentQuestion.id] ?? "").trim();
+    if (!value) return;
 
-    const updated = [...answers, newAnswer];
-    setAnswers(updated);
-
-    const nextStep = step + 1;
-
-    if (nextStep < questions.length) {
-      setStep(nextStep);
-    } else {
-      finish(updated);
+    if (questionIndex + 1 < questions.length) {
+      setQuestionIndex((prev) => prev + 1);
+      return;
     }
-  }
 
-  function finish(finalAnswers: Answer[]) {
     const submission: Submission = {
       id: crypto.randomUUID(),
       jobId,
-      candidateName: name,
-      candidateEmail: email,
-      answers: finalAnswers,
+      candidateName: candidateName.trim(),
+      candidateEmail: candidateEmail.trim(),
+      answers: questions.map((question) => ({
+        questionId: question.id,
+        responseType: question.responseType,
+        value: answers[question.id] ?? "",
+      })),
       submittedAt: new Date().toISOString(),
     };
 
     saveSubmission(submission);
-    router.push(`/jobs/${jobId}`);
+    setState("complete");
   }
 
-  if (!started) {
-    return (
-      <div className={styles.container}>
-        <div className={styles.card}>
-          <h1>{job.title}</h1>
+  function handleBack() {
+    if (questionIndex === 0) {
+      setState("welcome");
+      return;
+    }
 
-          <input
-            className={styles.input}
-            placeholder="Name"
-            value={name}
-            onChange={(e) => setName(e.target.value)}
-          />
-
-          <input
-            className={styles.input}
-            placeholder="Email"
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-          />
-
-          <button
-            className={styles.button}
-            onClick={start}
-            disabled={!name || !email}
-          >
-            Start Screening
-          </button>
-        </div>
-      </div>
-    );
+    setQuestionIndex((prev) => Math.max(0, prev - 1));
   }
 
   return (
-    <div className={styles.container}>
-      <p className={styles.progress}>
-        Question {step + 1} of {questions.length}
-      </p>
-
-      <div className={styles.card}>
-        <h2 className={styles.title}>{current.text}</h2>
-
-        <textarea
-          className={styles.input}
-          placeholder="Type your answer..."
-          onBlur={(e) => handleAnswer(e.target.value)}
+    <ScreeningShell>
+      {state === "welcome" && (
+        <ScreeningWelcomeStep
+          jobTitle={job.title}
+          questionCount={questions.length}
+          candidateName={candidateName}
+          candidateEmail={candidateEmail}
+          onCandidateNameChange={setCandidateName}
+          onCandidateEmailChange={setCandidateEmail}
+          onStart={startScreening}
         />
-      </div>
-    </div>
+      )}
+
+      {state === "question" && currentQuestion && (
+        <ScreeningQuestionStep
+          question={currentQuestion}
+          value={currentValue}
+          stepIndex={questionIndex}
+          totalSteps={questions.length}
+          progressPercent={progressPercent}
+          onValueChange={(value) => setAnswer(currentQuestion.id, value)}
+          onBack={handleBack}
+          onNext={handleNext}
+        />
+      )}
+
+      {state === "complete" && (
+        <ScreeningCompletionStep
+          jobTitle={job.title}
+          onReturnToDashboard={() => router.push("/jobs")}
+        />
+      )}
+    </ScreeningShell>
   );
 }
