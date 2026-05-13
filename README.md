@@ -52,11 +52,11 @@ The assessment required **no backend** – all data lives in `localStorage` and 
 | ------------------------ | ------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------- |
 | Jobs Listing             | <img src="./demo/jobs.png" alt="Jobs Listing desktop" width="360" />                                    | <img src="./demo/jobs.m.png" alt="Jobs Listing mobile" width="180" />                                    |
 | Create Screening Modal   | <img src="./demo/create-screening-modal.png" alt="Create Screening Modal desktop" width="360" />        | <img src="./demo/create-screening-modal.m.png" alt="Create Screening Modal mobile" width="180" />        |
-| Job Detail (Applicants)  | <img src="./demo/jobs-[jobId].png" alt="Job Detail desktop" width="360" />                              | <img src="./demo/jobs-[jobId].m.png" alt="Job Detail mobile" width="180" />                              |
-| Applicant Responses + AI | <img src="./demo/job-[jobId]-applicant-[applicantId].png" alt="Applicant detail desktop" width="360" /> | <img src="./demo/job-[jobId]-applicant-[applicantId].m.png" alt="Applicant detail mobile" width="180" /> |
-| Candidate Welcome        | <img src="./demo/screening-[jobId].png" alt="Candidate welcome desktop" width="360" />                  | <img src="./demo/screening-[jobId].m.png" alt="Candidate welcome mobile" width="180" />                  |
-| Candidate Question Step  | <img src="./demo/screening-[jobId]-1.png" alt="Candidate question step desktop" width="360" />          | <img src="./demo/screening-[jobId]-1.m.png" alt="Candidate question step mobile" width="180" />          |
-| Completion Screen        | <img src="./demo/screening-[jobId]-2.png" alt="Completion screen desktop" width="360" />                | <img src="./demo/screening-[jobId]-2.m.png" alt="Completion screen mobile" width="180" />                |
+| Job Detail (Applicants)  | <img src="./demo/jobs-%5BjobId%5D.png" alt="Job Detail desktop" width="360" />                          | <img src="./demo/jobs-%5BjobId%5D.m.png" alt="Job Detail mobile" width="180" />                          |
+| Applicant Responses + AI | <img src="./demo/job-%5BjobId%5D-applicant-%5BapplicantId%5D.png" alt="Applicant detail desktop" width="360" /> | <img src="./demo/job-%5BjobId%5D-applicant-%5BapplicantId%5D.m.png" alt="Applicant detail mobile" width="180" /> |
+| Candidate Welcome        | <img src="./demo/screening-%5BjobId%5D.png" alt="Candidate welcome desktop" width="360" />              | <img src="./demo/screening-%5BjobId%5D.m.png" alt="Candidate welcome mobile" width="180" />              |
+| Candidate Question Step  | <img src="./demo/screening-%5BjobId%5D-1.png" alt="Candidate question step desktop" width="360" />      | <img src="./demo/screening-%5BjobId%5D-1.m.png" alt="Candidate question step mobile" width="180" />      |
+| Completion Screen        | <img src="./demo/screening-%5BjobId%5D-2.png" alt="Completion screen desktop" width="360" />            | <img src="./demo/screening-%5BjobId%5D-2.m.png" alt="Completion screen mobile" width="180" />            |
 
 ---
 
@@ -115,7 +115,7 @@ The assessment required **no backend** – all data lives in `localStorage` and 
 ## Architecture
 
 ```mermaid
-flowchart TB
+flowchart TD
   subgraph App["Next.js App Router"]
     Home["/"]
     JobsList["/jobs"]
