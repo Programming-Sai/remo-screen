@@ -38,7 +38,7 @@
   background-color: var(--foreground);
   padding: 120px 60px;
 
-  border-radius: 12px;
+  border-radius: var(--radius-md);
   box-shadow: 0 10px 40px -10px rgba(0, 0, 0, 0.05);
 }
 

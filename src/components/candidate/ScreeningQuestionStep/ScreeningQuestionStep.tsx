@@ -1,6 +1,7 @@
 "use client";
 
 import styles from "@/app/screening/[jobId]/page.module.css";
+import { Icon } from "@/components/ui/Icon/Icon";
 
 type Question = {
   id: string;
@@ -56,7 +57,9 @@ export default function ScreeningQuestionStep({
 
           {question.responseType === "audio" && (
             <div className={styles.audioBox}>
-              <div className={styles.audioIconWrap}>🎙</div>
+              <div className={styles.audioIconWrap}>
+                <Icon name="mic_off" size={32} />
+              </div>
               <p className={styles.audioTitle}>Audio Submission Disabled</p>
               <p className={styles.audioText}>
                 For this demo, please use a text response below.
@@ -101,7 +104,9 @@ export default function ScreeningQuestionStep({
       </section>
 
       <div className={styles.tipRow}>
-        <span className={styles.tipIcon}>💡</span>
+        <span className={styles.tipIcon}>
+          <Icon name="lightbulb" size={20} />
+        </span>
         <p className={styles.tipText}>
           Tip: Focus on communication protocols, asynchronous workflows, and
           specific rituals that bridge the geographical gap.

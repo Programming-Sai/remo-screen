@@ -1,6 +1,10 @@
 "use client";
 
+import { useEffect, useState } from "react";
 import styles from "@/app/screening/[jobId]/page.module.css";
+import { Icon } from "@/components/ui/Icon/Icon";
+import HERO_IMAGES from "@/lib/images";
+import Image from "next/image";
 
 interface ScreeningWelcomeStepProps {
   jobTitle: string;
@@ -21,9 +25,35 @@ export default function ScreeningWelcomeStep({
   onCandidateEmailChange,
   onStart,
 }: ScreeningWelcomeStepProps) {
+  const [heroImage, setHeroImage] = useState<string>("");
+
+  useEffect(() => {
+    // Only run on client side
+    const randomIndex = Math.floor(Math.random() * HERO_IMAGES.length);
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    setHeroImage(HERO_IMAGES[randomIndex]);
+  }, []);
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    console.log("Form submitted", { candidateName, candidateEmail });
+    onStart();
+  };
+
   return (
     <div className={styles.content}>
       <div className={styles.hero}>
+        {heroImage && (
+          <Image
+            src={heroImage}
+            alt="Welcome to your assessment"
+            width={2070}
+            height={400}
+            className={styles.heroImage}
+            unoptimized
+            priority
+          />
+        )}
         <div className={styles.heroOverlay}>
           <span className={styles.heroBadge}>Official Assessment</span>
         </div>
@@ -41,13 +71,7 @@ export default function ScreeningWelcomeStep({
             </p>
           </header>
 
-          <form
-            className={styles.form}
-            onSubmit={(e) => {
-              e.preventDefault();
-              onStart();
-            }}
-          >
+          <form className={styles.form} onSubmit={handleSubmit}>
             <div className={styles.field}>
               <label className={styles.label} htmlFor="full_name">
                 Full Name <span style={{ color: "var(--error)" }}>*</span>
@@ -79,7 +103,9 @@ export default function ScreeningWelcomeStep({
             </div>
 
             <div className={styles.infoCard}>
-              <div className={styles.infoIcon}>⏱</div>
+              <div className={styles.infoIcon}>
+                <Icon name="schedule" size={20} />
+              </div>
               <div>
                 <div className={styles.infoTitle}>Estimated Duration</div>
                 <div className={styles.infoText}>
@@ -90,10 +116,6 @@ export default function ScreeningWelcomeStep({
             </div>
 
             <div className={styles.buttonRow}>
-              <button className={styles.secondaryButton} type="reset">
-                Clear form
-              </button>
-
               <button className={styles.primaryButton} type="submit">
                 Start Screening
               </button>
@@ -104,7 +126,9 @@ export default function ScreeningWelcomeStep({
 
       <div className={styles.infoGrid}>
         <div className={styles.infoCard}>
-          <div className={styles.infoIcon}>🔒</div>
+          <div className={styles.infoIcon}>
+            <Icon name="lock" size={20} />
+          </div>
           <div>
             <div className={styles.infoTitle}>Privacy First</div>
             <div className={styles.infoText}>
@@ -114,7 +138,9 @@ export default function ScreeningWelcomeStep({
         </div>
 
         <div className={styles.infoCard}>
-          <div className={styles.infoIcon}>🛟</div>
+          <div className={styles.infoIcon}>
+            <Icon name="support_agent" size={20} />
+          </div>
           <div>
             <div className={styles.infoTitle}>Need Help?</div>
             <div className={styles.infoText}>

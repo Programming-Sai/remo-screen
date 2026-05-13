@@ -1,12 +1,16 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { useParams, useRouter } from "next/navigation";
+import { useParams } from "next/navigation";
 
 import { jobs } from "@/data/jobs";
-import { getScreeningByJobId, saveSubmission } from "@/lib/storage";
+import {
+  getScreeningByJobId,
+  saveSubmission,
+  getSubmissionsByJob,
+} from "@/lib/storage";
 import { Submission } from "@/types";
-
+import styles from "./page.module.css";
 import ScreeningShell from "@/components/candidate/ScreeningShell/ScreeningShell";
 import ScreeningWelcomeStep from "@/components/candidate/ScreeningWelcomeStep/ScreeningWelcomeStep";
 import ScreeningQuestionStep from "@/components/candidate/ScreeningQuestionStep/ScreeningQuestionStep";
@@ -16,8 +20,6 @@ type ScreenState = "welcome" | "question" | "complete";
 
 export default function ScreeningPage() {
   const params = useParams();
-  const router = useRouter();
-
   const jobId = params?.jobId as string;
 
   const job = useMemo(() => jobs.find((j) => j.id === jobId), [jobId]);
@@ -28,6 +30,7 @@ export default function ScreeningPage() {
   const [candidateName, setCandidateName] = useState("");
   const [candidateEmail, setCandidateEmail] = useState("");
   const [answers, setAnswers] = useState<Record<string, string>>({});
+  const [error, setError] = useState<string>("");
 
   if (!job) return <p>Job not found</p>;
   if (!screening) return <p>No screening found</p>;
@@ -40,7 +43,28 @@ export default function ScreeningPage() {
   );
 
   function startScreening() {
-    if (!candidateName.trim() || !candidateEmail.trim()) return;
+    const trimmedName = candidateName.trim();
+    const trimmedEmail = candidateEmail.trim();
+
+    if (!trimmedName || !trimmedEmail) {
+      setError("Please enter both name and email");
+      return;
+    }
+
+    // Check for duplicate submission - do it fresh each time
+    const existingSubmissions = getSubmissionsByJob(jobId);
+    const hasExisting = existingSubmissions.some(
+      (sub) => sub.candidateEmail.toLowerCase() === trimmedEmail.toLowerCase(),
+    );
+
+    if (hasExisting) {
+      setError(
+        "A submission with this email already exists. Please use a different email address.",
+      );
+      return;
+    }
+
+    setError("");
     setState("question");
     setQuestionIndex(0);
   }
@@ -83,22 +107,28 @@ export default function ScreeningPage() {
       setState("welcome");
       return;
     }
-
     setQuestionIndex((prev) => Math.max(0, prev - 1));
+  }
+
+  function handleClose() {
+    window.close();
   }
 
   return (
     <ScreeningShell>
       {state === "welcome" && (
-        <ScreeningWelcomeStep
-          jobTitle={job.title}
-          questionCount={questions.length}
-          candidateName={candidateName}
-          candidateEmail={candidateEmail}
-          onCandidateNameChange={setCandidateName}
-          onCandidateEmailChange={setCandidateEmail}
-          onStart={startScreening}
-        />
+        <>
+          <ScreeningWelcomeStep
+            jobTitle={job.title}
+            questionCount={questions.length}
+            candidateName={candidateName}
+            candidateEmail={candidateEmail}
+            onCandidateNameChange={setCandidateName}
+            onCandidateEmailChange={setCandidateEmail}
+            onStart={startScreening}
+          />
+          {error && <div className={styles.error}>{error}</div>}
+        </>
       )}
 
       {state === "question" && currentQuestion && (
@@ -115,10 +145,7 @@ export default function ScreeningPage() {
       )}
 
       {state === "complete" && (
-        <ScreeningCompletionStep
-          jobTitle={job.title}
-          onReturnToDashboard={() => router.push("/jobs")}
-        />
+        <ScreeningCompletionStep jobTitle={job.title} onClose={handleClose} />
       )}
     </ScreeningShell>
   );
