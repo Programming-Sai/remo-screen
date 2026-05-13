@@ -45,3 +45,15 @@ export interface AnalysisResult {
   concerns: string[];
   recommendation: "advance" | "reject" | "hold";
 }
+
+export interface CandidateSession {
+  id: string;
+  jobId: string;
+  candidateName: string;
+  candidateEmail: string;
+  questionIndex: number;
+  questionCount: number;
+  answers: Record<string, string>;
+  startedAt: string;
+  updatedAt: string;
+}

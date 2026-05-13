@@ -125,9 +125,9 @@ export default function ApplicantPage() {
       <main className={styles.content}>
         <div className={styles.breadcrumbs}>
           <Link href="/jobs">Jobs</Link>
-          <span>&gt;</span>
+          <Icon name="chevron_forward" className={styles.breadcrumbschevron} />
           <Link href={`/jobs/${job.id}`}>{job.title}</Link>
-          <span>&gt;</span>
+          <Icon name="chevron_forward" className={styles.breadcrumbschevron} />
           <span className={styles.breadcrumbCurrent}>Applicant</span>
         </div>
 
@@ -137,7 +137,7 @@ export default function ApplicantPage() {
               {submission.candidateName
                 .split(" ")
                 .slice(0, 2)
-                .map((part) => part[0])
+                .map((part: string) => part.charAt(0))
                 .join("")
                 .toUpperCase()}
             </div>
@@ -150,7 +150,9 @@ export default function ApplicantPage() {
               <div className={styles.metaLine}>
                 <Icon name="mail" size={14} className={styles.metaIcon} />
                 <span>{submission.candidateEmail}</span>
-                <span className={styles.metaSeparator}>•</span>
+                <span className={styles.metaSeparator} aria-hidden="true">
+                  &middot;
+                </span>
                 <Icon name="schedule" size={14} className={styles.metaIcon} />
                 <span>
                   Applied {formatRelativeTime(submission.submittedAt)}
@@ -161,6 +163,44 @@ export default function ApplicantPage() {
         </div>
 
         <div className={styles.layout}>
+          <section className={styles.responsesColumn}>
+            <h2 className={styles.sectionTitle}>Screening Responses</h2>
+
+            <div className={styles.responseList}>
+              {submission.answers.map((answer, index) => {
+                const questionText =
+                  questionMap.get(answer.questionId) ?? `Question ${index + 1}`;
+
+                return (
+                  <article
+                    key={answer.questionId}
+                    className={styles.responseCard}
+                  >
+                    <div className={styles.questionRow}>
+                      <span className={styles.questionTag}>Q{index + 1}</span>
+                      <p className={styles.questionText}>{questionText}</p>
+                    </div>
+
+                    <div className={styles.answerPanel}>
+                      {answer.responseType === "audio" ? (
+                        <>
+                          <AudioPlayer hasAudio />
+                          <div className={styles.transcriptSection}>
+                            <p className={styles.transcriptPlaceholder}>
+                              {answer.value ||
+                                "Transcript will appear after analysis."}
+                            </p>
+                          </div>
+                        </>
+                      ) : (
+                        <p className={styles.textAnswer}>{answer.value}</p>
+                      )}
+                    </div>
+                  </article>
+                );
+              })}
+            </div>
+          </section>
           <aside className={styles.analysisColumn}>
             <div className={styles.analysisCard}>
               <div className={styles.analysisHeader}>
@@ -265,45 +305,6 @@ export default function ApplicantPage() {
               )}
             </div>
           </aside>
-
-          <section className={styles.responsesColumn}>
-            <h2 className={styles.sectionTitle}>Screening Responses</h2>
-
-            <div className={styles.responseList}>
-              {submission.answers.map((answer, index) => {
-                const questionText =
-                  questionMap.get(answer.questionId) ?? `Question ${index + 1}`;
-
-                return (
-                  <article
-                    key={answer.questionId}
-                    className={styles.responseCard}
-                  >
-                    <div className={styles.questionRow}>
-                      <span className={styles.questionTag}>Q{index + 1}</span>
-                      <p className={styles.questionText}>{questionText}</p>
-                    </div>
-
-                    <div className={styles.answerPanel}>
-                      {answer.responseType === "audio" ? (
-                        <>
-                          <AudioPlayer hasAudio />
-                          <div className={styles.transcriptSection}>
-                            <p className={styles.transcriptPlaceholder}>
-                              {answer.value ||
-                                "Transcript will appear after analysis."}
-                            </p>
-                          </div>
-                        </>
-                      ) : (
-                        <p className={styles.textAnswer}>{answer.value}</p>
-                      )}
-                    </div>
-                  </article>
-                );
-              })}
-            </div>
-          </section>
         </div>
       </main>
     </div>

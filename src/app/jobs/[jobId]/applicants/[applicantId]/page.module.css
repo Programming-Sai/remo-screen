@@ -10,6 +10,10 @@
   padding: 96px 32px 96px;
 }
 
+.breadcrumbschevron {
+  color: var(--on-surface-variant);
+}
+
 .breadcrumbs {
   display: flex;
   align-items: center;
@@ -127,9 +131,10 @@
 
 .layout {
   display: grid;
-  grid-template-columns: minmax(320px, 5fr) minmax(0, 7fr);
+  grid-template-columns: minmax(0, 7fr), minmax(320px, 5fr);
   gap: 24px;
   align-items: start;
+  flex-direction: row-reverse;
 }
 
 .responsesColumn {

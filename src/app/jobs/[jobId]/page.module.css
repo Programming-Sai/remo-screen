@@ -32,6 +32,98 @@
   margin-bottom: 40px;
 }
 
+.statusGrid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 16px;
+  margin-bottom: 24px;
+}
+
+.statusCard,
+.startedCard {
+  background: var(--surface-container-lowest);
+  border: 1px solid var(--surface-container);
+  border-radius: 16px;
+  box-shadow:
+    0 1px 2px rgba(60, 64, 67, 0.12),
+    0 1px 3px rgba(60, 64, 67, 0.08);
+}
+
+.statusCard {
+  padding: 20px 22px;
+}
+
+.statusLabel {
+  display: inline-flex;
+  align-items: center;
+  margin-bottom: 8px;
+  color: var(--on-surface-variant);
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.statusValue {
+  display: block;
+  margin-bottom: 6px;
+  font-size: 32px;
+  line-height: 1;
+  font-weight: 700;
+  color: var(--on-surface);
+}
+
+.statusText {
+  font-size: 14px;
+  line-height: 1.5;
+  color: var(--on-surface-variant);
+}
+
+.startedCard {
+  margin-bottom: 24px;
+  overflow: hidden;
+}
+
+.sectionHint {
+  font-size: 14px;
+  color: var(--on-surface-variant);
+}
+
+.startedList {
+  display: flex;
+  flex-direction: column;
+}
+
+.startedRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 16px 24px;
+  border-top: 1px solid var(--surface-container);
+}
+
+.startedMeta {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  font-size: 14px;
+  color: var(--on-surface-variant);
+}
+
+.statusChipStarted {
+  display: inline-flex;
+  align-items: center;
+  padding: 6px 10px;
+  border-radius: 10px;
+  background: rgba(255, 120, 75, 0.12);
+  color: var(--primary);
+  font-size: 12px;
+  font-weight: 700;
+}
+
 .jobCard,
 .linkCard,
 .pipelineCard {
@@ -411,5 +503,18 @@
   .searchInput {
     flex: 1;
     min-width: auto;
+  }
+
+  .statusGrid {
+    grid-template-columns: 1fr;
+  }
+
+  .startedRow {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .startedMeta {
+    justify-content: flex-start;
   }
 }

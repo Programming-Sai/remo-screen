@@ -214,9 +214,13 @@ export default function JobsPage() {
 
       {/* Back to Top Button */}
       {showBackToTop && (
-        <button onClick={scrollToTop} className={styles.backToTop}>
-          <Icon name="arrow_upward" />
-        </button>
+      <button
+        onClick={scrollToTop}
+        className={styles.backToTop}
+        aria-label="Back to top"
+      >
+        <Icon name="arrow_upward" />
+      </button>
       )}
     </main>
   );

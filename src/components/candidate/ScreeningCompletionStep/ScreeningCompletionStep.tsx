@@ -5,7 +5,7 @@ import { Icon } from "@/components/ui/Icon/Icon";
 
 interface ScreeningCompletionStepProps {
   jobTitle: string;
-  onClose: () => void; // renamed from onReturnToDashboard
+  onClose: () => void;
 }
 
 export default function ScreeningCompletionStep({

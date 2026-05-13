@@ -1,10 +1,11 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import Image from "next/image";
+
 import styles from "@/app/screening/[jobId]/page.module.css";
 import { Icon } from "@/components/ui/Icon/Icon";
 import HERO_IMAGES from "@/lib/images";
-import Image from "next/image";
 
 interface ScreeningWelcomeStepProps {
   jobTitle: string;
@@ -28,7 +29,6 @@ export default function ScreeningWelcomeStep({
   const [heroImage, setHeroImage] = useState<string>("");
 
   useEffect(() => {
-    // Only run on client side
     const randomIndex = Math.floor(Math.random() * HERO_IMAGES.length);
     // eslint-disable-next-line react-hooks/set-state-in-effect
     setHeroImage(HERO_IMAGES[randomIndex]);
@@ -108,7 +108,7 @@ export default function ScreeningWelcomeStep({
               <div>
                 <div className={styles.infoTitle}>Estimated Duration</div>
                 <div className={styles.infoText}>
-                  {Math.max(5, questionCount * 5)} minutes • {questionCount}{" "}
+                  {Math.max(5, questionCount * 5)} minutes &middot; {questionCount}{" "}
                   sections
                 </div>
               </div>

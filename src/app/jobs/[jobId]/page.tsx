@@ -6,7 +6,11 @@ import { useParams, useRouter } from "next/navigation";
 
 import { jobs } from "@/data/jobs";
 import CreateScreeningModal from "@/components/recruiter/CreateScreeningModal/CreateScreeningModal";
-import { getScreeningsByJob, getSubmissionsByJob } from "@/lib/storage";
+import {
+  getScreeningsByJob,
+  getStartedApplicants,
+  getSubmissionsByJob,
+} from "@/lib/storage";
 import { useToast } from "@/contexts/ToastContext";
 
 import styles from "./page.module.css";
@@ -30,6 +34,7 @@ export default function JobPage() {
   const screenings = getScreeningsByJob(jobId);
   const screening = screenings[0];
   const submissions = getSubmissionsByJob(jobId);
+  const startedApplicants = getStartedApplicants(jobId);
   const screeningPath = `/screening/${jobId}`;
 
   const filteredSubmissions = useMemo(() => {
@@ -54,9 +59,7 @@ export default function JobPage() {
   };
 
   const handleCopy = () => {
-    navigator.clipboard.writeText(
-      `${window.location.origin}${screeningPath}`,
-    );
+    navigator.clipboard.writeText(`${window.location.origin}${screeningPath}`);
     showToast({
       type: "success",
       title: "Link copied",
@@ -120,6 +123,14 @@ export default function JobPage() {
                       ? `Screening created${screenings.length > 1 ? ` (${screenings.length})` : ""}`
                       : "No screening yet"}
                   </span>
+                  <span>
+                    <Icon name="schedule" size={16} />
+                    {startedApplicants.length} started
+                  </span>
+                  <span>
+                    <Icon name="task_alt" size={16} />
+                    {submissions.length} submitted
+                  </span>
                 </div>
               </div>
 
@@ -169,6 +180,88 @@ export default function JobPage() {
           </aside>
         </div>
 
+        <section className={styles.statusGrid}>
+          <article className={styles.statusCard}>
+            <span className={styles.statusLabel}>In Progress</span>
+            <strong className={styles.statusValue}>
+              {startedApplicants.length}
+            </strong>
+            <p className={styles.statusText}>
+              Candidates who have opened the screening but not submitted yet.
+            </p>
+          </article>
+
+          <article className={styles.statusCard}>
+            <span className={styles.statusLabel}>Submitted</span>
+            <strong className={styles.statusValue}>{submissions.length}</strong>
+            <p className={styles.statusText}>
+              Completed applications ready for recruiter review.
+            </p>
+          </article>
+        </section>
+
+        <section className={styles.startedCard}>
+          <div className={styles.sectionHeader}>
+            <h2 className={styles.sectionTitle}>In Progress</h2>
+            <span className={styles.sectionHint}>
+              {startedApplicants.length} active session
+              {startedApplicants.length === 1 ? "" : "s"}
+            </span>
+          </div>
+
+          {startedApplicants.length === 0 ? (
+            <div className={styles.emptyState}>
+              <h3>No candidates currently in progress</h3>
+              <p>
+                Once a candidate opens the public link, their draft progress
+                will appear here.
+              </p>
+            </div>
+          ) : (
+            <div className={styles.startedList}>
+              {startedApplicants.map((applicant) => (
+                <article key={applicant.id} className={styles.startedRow}>
+                  <div className={styles.candidateCell}>
+                    <div className={styles.candidateAvatar}>
+                      {applicant.candidateName
+                        .split(" ")
+                        .slice(0, 2)
+                        .map((part: string) => part.charAt(0))
+                        .join("")
+                        .toUpperCase()}
+                    </div>
+
+                    <div>
+                      <div className={styles.candidateName}>
+                        {applicant.candidateName}
+                      </div>
+                      <div className={styles.candidateEmail}>
+                        {applicant.candidateEmail}
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className={styles.startedMeta}>
+                    <span className={styles.statusChipStarted}>Started</span>
+                    <span>
+                      Question{" "}
+                      {Math.min(
+                        applicant.questionIndex + 1,
+                        applicant.questionCount,
+                      )}{" "}
+                      of {applicant.questionCount}
+                    </span>
+                    <span>
+                      Updated{" "}
+                      {new Date(applicant.updatedAt).toLocaleDateString()}
+                    </span>
+                  </div>
+                </article>
+              ))}
+            </div>
+          )}
+        </section>
+
         <section className={styles.pipelineCard}>
           <div className={styles.sectionHeader}>
             <h2 className={styles.sectionTitle}>Applicant Pipeline</h2>
@@ -201,7 +294,9 @@ export default function JobPage() {
 
           {filteredSubmissions.length === 0 ? (
             <div className={styles.emptyState}>
-              <h3>{searchTerm ? "No matching applicants" : "No applicants yet"}</h3>
+              <h3>
+                {searchTerm ? "No matching applicants" : "No applicants yet"}
+              </h3>
               <p>
                 {searchTerm
                   ? "Try a different name or email."
@@ -229,7 +324,7 @@ export default function JobPage() {
                               {submission.candidateName
                                 .split(" ")
                                 .slice(0, 2)
-                                .map((part) => part[0])
+                                .map((part: string) => part.charAt(0))
                                 .join("")
                                 .toUpperCase()}
                             </div>
@@ -248,14 +343,18 @@ export default function JobPage() {
                           <span className={styles.statusChip}>Submitted</span>
                         </td>
                         <td className={styles.appliedAt}>
-                          {new Date(submission.submittedAt).toLocaleDateString()}
+                          {new Date(
+                            submission.submittedAt,
+                          ).toLocaleDateString()}
                         </td>
                         <td className={styles.actionsCell}>
                           <button
                             className={styles.responseButton}
                             type="button"
                             onClick={() =>
-                              router.push(`/jobs/${job.id}/applicants/${submission.id}`)
+                              router.push(
+                                `/jobs/${job.id}/applicants/${submission.id}`,
+                              )
                             }
                           >
                             View Responses
@@ -293,8 +392,9 @@ export default function JobPage() {
 
               <div className={styles.pipelineFooter}>
                 <p>
-                  Showing {paginatedSubmissions.length} of {filteredSubmissions.length}{" "}
-                  applicant{filteredSubmissions.length === 1 ? "" : "s"}
+                  Showing {paginatedSubmissions.length} of{" "}
+                  {filteredSubmissions.length} applicant
+                  {filteredSubmissions.length === 1 ? "" : "s"}
                 </p>
               </div>
             </>

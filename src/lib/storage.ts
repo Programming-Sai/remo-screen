@@ -1,10 +1,17 @@
-import { AnalysisResult, Job, Screening, Submission } from "@/types";
+import {
+  AnalysisResult,
+  CandidateSession,
+  Job,
+  Screening,
+  Submission,
+} from "@/types";
 
 const STORAGE_KEYS = {
   JOBS: "aihrly_jobs",
   SCREENINGS: "aihrly_screenings",
   SUBMISSIONS: "aihrly_submissions",
   ANALYSES: "aihrly_analyses",
+  CANDIDATE_SESSIONS: "aihrly_candidate_sessions",
 } as const;
 
 /* ---------------------------
@@ -32,6 +39,43 @@ function write<T>(key: string, value: T[]) {
     localStorage.setItem(key, JSON.stringify(value));
   } catch {
     // ignore write errors for now
+  }
+}
+
+function normalizeEmail(email: string) {
+  return email.trim().toLowerCase();
+}
+
+function isCandidateSession(value: unknown): value is CandidateSession {
+  if (!value || typeof value !== "object") return false;
+
+  const session = value as Record<string, unknown>;
+  return (
+    typeof session.id === "string" &&
+    typeof session.jobId === "string" &&
+    typeof session.candidateName === "string" &&
+    typeof session.candidateEmail === "string" &&
+    typeof session.questionIndex === "number" &&
+    typeof session.questionCount === "number" &&
+    typeof session.answers === "object" &&
+    session.answers !== null &&
+    !Array.isArray(session.answers) &&
+    typeof session.startedAt === "string" &&
+    typeof session.updatedAt === "string"
+  );
+}
+
+function getCandidateSessionsFromStorage(): CandidateSession[] {
+  if (typeof window === "undefined") return [];
+
+  try {
+    const data = localStorage.getItem(STORAGE_KEYS.CANDIDATE_SESSIONS);
+    if (!data) return [];
+
+    const parsed = JSON.parse(data);
+    return Array.isArray(parsed) ? parsed.filter(isCandidateSession) : [];
+  } catch {
+    return [];
   }
 }
 
@@ -73,7 +117,6 @@ export function getScreeningById(id: string): Screening | undefined {
   return getScreenings().find((s) => s.id === id);
 }
 
-/* FIX for your error */
 export function getScreeningByJobId(jobId: string): Screening | undefined {
   return getScreenings().find((s) => s.jobId === jobId);
 }
@@ -100,7 +143,6 @@ export function getSubmissions(): Submission[] {
   );
 }
 
-/* FIX for your error */
 export function getSubmissionsByJob(jobId: string): Submission[] {
   return getSubmissions().filter((s) => s.jobId === jobId);
 }
@@ -118,6 +160,100 @@ export function saveSubmission(submission: Submission) {
 
 export function getApplicantCount(jobId: string): number {
   return getSubmissionsByJob(jobId).length;
+}
+
+/* ---------------------------
+   CANDIDATE SESSIONS (DRAFTS)
+--------------------------- */
+
+export function getCandidateSessions(): CandidateSession[] {
+  return getCandidateSessionsFromStorage().sort(
+    (a, b) => new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime(),
+  );
+}
+
+export function getCandidateSessionByJobId(
+  jobId: string,
+): CandidateSession | undefined {
+  return getCandidateSessions().find((session) => session.jobId === jobId);
+}
+
+export function getCandidateSessionByJobIdAndEmail(
+  jobId: string,
+  candidateEmail: string,
+): CandidateSession | undefined {
+  const normalizedEmail = normalizeEmail(candidateEmail);
+
+  return getCandidateSessions().find(
+    (session) =>
+      session.jobId === jobId &&
+      normalizeEmail(session.candidateEmail) === normalizedEmail,
+  );
+}
+
+export function getCandidateSessionsByJob(jobId: string): CandidateSession[] {
+  return getCandidateSessions().filter((session) => session.jobId === jobId);
+}
+
+export function saveCandidateSession(session: CandidateSession): void {
+  if (typeof window === "undefined") return;
+
+  try {
+    const sessions = getCandidateSessions().filter(
+      (existing) =>
+        !(
+          existing.jobId === session.jobId &&
+          normalizeEmail(existing.candidateEmail) ===
+            normalizeEmail(session.candidateEmail)
+        ),
+    );
+
+    sessions.push(session);
+    localStorage.setItem(
+      STORAGE_KEYS.CANDIDATE_SESSIONS,
+      JSON.stringify(sessions),
+    );
+  } catch {
+    // ignore write errors for now
+  }
+}
+
+export function clearCandidateSession(
+  jobId: string,
+  candidateEmail?: string,
+): void {
+  if (typeof window === "undefined") return;
+
+  try {
+    const sessions = getCandidateSessions().filter((existing) => {
+      if (existing.jobId !== jobId) return true;
+      if (!candidateEmail) return false;
+
+      return (
+        normalizeEmail(existing.candidateEmail) !==
+        normalizeEmail(candidateEmail)
+      );
+    });
+
+    localStorage.setItem(
+      STORAGE_KEYS.CANDIDATE_SESSIONS,
+      JSON.stringify(sessions),
+    );
+  } catch {
+    // ignore write errors for now
+  }
+}
+
+export function getStartedApplicants(jobId: string): CandidateSession[] {
+  const submittedEmails = new Set(
+    getSubmissionsByJob(jobId).map((submission) =>
+      normalizeEmail(submission.candidateEmail),
+    ),
+  );
+
+  return getCandidateSessionsByJob(jobId).filter(
+    (session) => !submittedEmails.has(normalizeEmail(session.candidateEmail)),
+  );
 }
 
 /* ---------------------------
@@ -184,4 +320,5 @@ export function clearAllStorage() {
   localStorage.removeItem(STORAGE_KEYS.SCREENINGS);
   localStorage.removeItem(STORAGE_KEYS.SUBMISSIONS);
   localStorage.removeItem(STORAGE_KEYS.ANALYSES);
+  localStorage.removeItem(STORAGE_KEYS.CANDIDATE_SESSIONS);
 }

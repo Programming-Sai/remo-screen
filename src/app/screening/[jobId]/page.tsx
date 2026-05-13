@@ -1,11 +1,14 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useParams } from "next/navigation";
 
 import { jobs } from "@/data/jobs";
 import {
+  clearCandidateSession,
+  getCandidateSessionByJobIdAndEmail,
   getScreeningByJobId,
+  saveCandidateSession,
   saveSubmission,
   getSubmissionsByJob,
 } from "@/lib/storage";
@@ -26,6 +29,8 @@ export default function ScreeningPage() {
 
   const job = useMemo(() => jobs.find((j) => j.id === jobId), [jobId]);
   const screening = getScreeningByJobId(jobId);
+  const hasScreening = Boolean(screening);
+  const questionCount = screening?.questions.length ?? 0;
 
   const [state, setState] = useState<ScreenState>("welcome");
   const [questionIndex, setQuestionIndex] = useState(0);
@@ -33,7 +38,54 @@ export default function ScreeningPage() {
   const [candidateEmail, setCandidateEmail] = useState("");
   const [answers, setAnswers] = useState<Record<string, string>>({});
   const [error, setError] = useState<string>("");
+  const [isHydrated, setIsHydrated] = useState(false);
+  const candidateSessionIdRef = useRef("");
   const { showToast } = useToast();
+
+  useEffect(() => {
+    if (!hasScreening) return;
+
+    const timeoutId = window.setTimeout(() => {
+      setIsHydrated(true);
+    }, 0);
+
+    return () => window.clearTimeout(timeoutId);
+  }, [hasScreening, jobId, questionCount]);
+
+  useEffect(() => {
+    if (!isHydrated || state !== "question" || !hasScreening) return;
+
+    const now = new Date().toISOString();
+    const existingSession = getCandidateSessionByJobIdAndEmail(
+      jobId,
+      candidateEmail,
+    );
+    const sessionId =
+      existingSession?.id || candidateSessionIdRef.current || crypto.randomUUID();
+    candidateSessionIdRef.current = sessionId;
+
+    saveCandidateSession({
+      id: sessionId,
+      jobId,
+      candidateName: candidateName.trim(),
+      candidateEmail: candidateEmail.trim(),
+      questionIndex,
+      questionCount,
+      answers,
+      startedAt: existingSession?.startedAt ?? now,
+      updatedAt: now,
+    });
+  }, [
+    answers,
+    candidateEmail,
+    candidateName,
+    hasScreening,
+    isHydrated,
+    jobId,
+    questionIndex,
+    questionCount,
+    state,
+  ]);
 
   if (!job) {
     return (
@@ -107,7 +159,6 @@ export default function ScreeningPage() {
       return;
     }
 
-    // Check for duplicate submission - do it fresh each time
     const existingSubmissions = getSubmissionsByJob(jobId);
     const hasExisting = existingSubmissions.some(
       (sub) => sub.candidateEmail.toLowerCase() === trimmedEmail.toLowerCase(),
@@ -123,8 +174,33 @@ export default function ScreeningPage() {
     }
 
     setError("");
+    const existingSession = getCandidateSessionByJobIdAndEmail(
+      jobId,
+      trimmedEmail,
+    );
+    const sessionId = existingSession?.id || crypto.randomUUID();
+    candidateSessionIdRef.current = sessionId;
+    const startedAt = existingSession?.startedAt ?? new Date().toISOString();
+    const resumeIndex = existingSession
+      ? Math.min(existingSession.questionIndex, questions.length - 1)
+      : 0;
+    const resumeAnswers = existingSession?.answers ?? answers;
+
+    saveCandidateSession({
+      id: sessionId,
+      jobId,
+      candidateName: trimmedName,
+      candidateEmail: trimmedEmail,
+      questionIndex: resumeIndex,
+      questionCount: questions.length,
+      answers: resumeAnswers,
+      startedAt,
+      updatedAt: new Date().toISOString(),
+    });
+
     setState("question");
-    setQuestionIndex(0);
+    setQuestionIndex(resumeIndex);
+    setAnswers(resumeAnswers);
   }
 
   function setAnswer(questionId: string, value: string) {
@@ -157,6 +233,7 @@ export default function ScreeningPage() {
     };
 
     saveSubmission(submission);
+    clearCandidateSession(jobId, candidateEmail);
     setState("complete");
   }
 
