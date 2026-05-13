@@ -1,14 +1,18 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useParams } from "next/navigation";
+import Link from "next/link";
 
 import { jobs } from "@/data/jobs";
 import { getScreeningByJobId, getSubmissionById } from "@/lib/storage";
+import { formatRelativeTime } from "@/lib/timeFormat";
 
 import styles from "./page.module.css";
-import Link from "next/link";
 import { Header } from "@/components/ui/Header/Header";
+import { Icon } from "@/components/ui/Icon/Icon";
+import AudioPlayer from "@/components/recruiter/CreateScreeningModal/AudioPlayer/AudioPlayer";
+import { Submission } from "@/types";
 
 type AnalysisResult = {
   summary: string;
@@ -19,7 +23,6 @@ type AnalysisResult = {
 
 export default function ApplicantPage() {
   const params = useParams();
-
   const jobId = params?.jobId as string;
   const applicantId = params?.applicantId as string;
 
@@ -29,17 +32,46 @@ export default function ApplicantPage() {
 
   const [loading, setLoading] = useState(false);
   const [analysis, setAnalysis] = useState<AnalysisResult | null>(null);
+  const [transcriptLoading, setTranscriptLoading] = useState<
+    Record<string, boolean>
+  >({});
+  const [transcripts, setTranscripts] = useState<Record<string, string>>({});
 
-  if (!job) return <p>Job not found</p>;
-  if (!submission) return <p>Applicant not found</p>;
+  // Early returns - must be after all hooks
 
   const questionMap = new Map(
     screening?.questions.map((question) => [question.id, question.text]) ?? [],
   );
 
+  // Simulate transcript loading for audio answers
+  useEffect(() => {
+    if (!submission) return;
+
+    submission.answers.forEach((answer) => {
+      if (answer.responseType === "audio" && !transcripts[answer.questionId]) {
+        setTranscriptLoading((prev) => ({
+          ...prev,
+          [answer.questionId]: true,
+        }));
+        setTimeout(() => {
+          setTranscripts((prev) => ({
+            ...prev,
+            [answer.questionId]: answer.value,
+          }));
+          setTranscriptLoading((prev) => ({
+            ...prev,
+            [answer.questionId]: false,
+          }));
+        }, 1800);
+      }
+    });
+  }, [submission, transcripts]);
+
+  if (!submission) return <p>Applicant not found</p>;
+  if (!job) return <p>Job not found</p>;
+
   function analyze() {
     setLoading(true);
-
     setTimeout(() => {
       setAnalysis({
         summary:
@@ -52,7 +84,6 @@ export default function ApplicantPage() {
         concerns: ["Limited system design depth"],
         recommendation: "advance",
       });
-
       setLoading(false);
     }, 1200);
   }
@@ -65,7 +96,7 @@ export default function ApplicantPage() {
         <div className={styles.breadcrumbs}>
           <Link href="/jobs">Jobs</Link>
           <span>›</span>
-          <a href={`/jobs/${job.id}`}>{job.title}</a>
+          <Link href={`/jobs/${job.id}`}>{job.title}</Link>
           <span>›</span>
           <span className={styles.breadcrumbCurrent}>Applicant</span>
         </div>
@@ -81,16 +112,20 @@ export default function ApplicantPage() {
                 .toUpperCase()}
             </div>
 
-            <div>
+            <div className={styles.applicantDetails}>
               <div className={styles.nameRow}>
                 <h1 className={styles.title}>{submission.candidateName}</h1>
                 <span className={styles.roleChip}>{job.title}</span>
               </div>
-
-              <p className={styles.subText}>
-                {submission.candidateEmail} • Applied{" "}
-                {new Date(submission.submittedAt).toLocaleDateString()}
-              </p>
+              <div className={styles.metaLine}>
+                <Icon name="mail" size={14} className={styles.metaIcon} />
+                <span>{submission.candidateEmail}</span>
+                <span className={styles.metaSeparator}>•</span>
+                <Icon name="schedule" size={14} className={styles.metaIcon} />
+                <span>
+                  Applied {formatRelativeTime(submission.submittedAt)}
+                </span>
+              </div>
             </div>
           </div>
 
@@ -125,26 +160,23 @@ export default function ApplicantPage() {
                     <div className={styles.answerPanel}>
                       {answer.responseType === "audio" ? (
                         <>
-                          <div className={styles.audioRow}>
-                            <button
-                              className={styles.audioButton}
-                              type="button"
-                            >
-                              ▶
-                            </button>
-
-                            <div className={styles.audioTrack}>
-                              <div className={styles.audioFill} />
-                            </div>
-
-                            <span className={styles.audioTime}>
-                              0:45 / 2:12
-                            </span>
+                          <AudioPlayer />
+                          <div className={styles.transcriptSection}>
+                            {transcriptLoading[answer.questionId] ? (
+                              <div className={styles.transcriptLoading}>
+                                <Icon name="mic" size={16} />
+                                <span>Processing transcript...</span>
+                              </div>
+                            ) : transcripts[answer.questionId] ? (
+                              <p className={styles.transcript}>
+                                {transcripts[answer.questionId]}
+                              </p>
+                            ) : (
+                              <p className={styles.transcriptPlaceholder}>
+                                Transcript will appear after analysis.
+                              </p>
+                            )}
                           </div>
-
-                          <p className={styles.transcript}>
-                            Transcript processing...
-                          </p>
                         </>
                       ) : (
                         <p className={styles.textAnswer}>{answer.value}</p>
@@ -160,11 +192,13 @@ export default function ApplicantPage() {
             <div className={styles.analysisCard}>
               <div className={styles.analysisHeader}>
                 <div className={styles.analysisHeading}>
-                  <span className={styles.sparkIcon}>✦</span>
+                  <Icon
+                    name="auto_awesome"
+                    size={20}
+                    className={styles.sparkIcon}
+                  />
                   <h2>AI Insights</h2>
                 </div>
-
-                <span className={styles.modelChip}>GPT-4 Turbo</span>
               </div>
 
               {analysis ? (
@@ -179,7 +213,12 @@ export default function ApplicantPage() {
                     <ul className={styles.checkList}>
                       {analysis.strengths.map((strength) => (
                         <li key={strength} className={styles.checkItem}>
-                          <span className={styles.checkIcon}>✓</span>
+                          <Icon
+                            name="check_circle"
+                            size={16}
+                            fill
+                            className={styles.checkIcon}
+                          />
                           {strength}
                         </li>
                       ))}
@@ -189,7 +228,11 @@ export default function ApplicantPage() {
                   <section className={styles.analysisSection}>
                     <h3 className={styles.analysisLabel}>Areas for Review</h3>
                     <div className={styles.reviewBox}>
-                      <span className={styles.warningIcon}>!</span>
+                      <Icon
+                        name="warning"
+                        size={16}
+                        className={styles.warningIcon}
+                      />
                       <p className={styles.reviewText}>
                         {analysis.concerns[0]}
                       </p>
@@ -228,6 +271,7 @@ export default function ApplicantPage() {
                 </div>
               ) : (
                 <div className={styles.analysisPlaceholder}>
+                  <Icon name="psychology" size={32} />
                   <p>Run analysis to generate recruiter guidance.</p>
                 </div>
               )}

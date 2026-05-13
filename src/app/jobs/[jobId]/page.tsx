@@ -81,13 +81,13 @@ export default function JobPage() {
 
                 <div className={styles.metaRow}>
                   <span>
-                    <Icon name="location_on" opticalSize={20} /> {job.location}
+                    <Icon name="location_on" size={16} /> {job.location}
                   </span>
                   <span>
-                    <Icon name="work" opticalSize={20} /> {job.employmentType}
+                    <Icon name="work" size={16} /> {job.employmentType}
                   </span>
                   <span>
-                    <Icon name="quiz" opticalSize={20} />
+                    <Icon name="quiz" size={16} />
                     {screening ? "Screening created" : "No screening yet"}
                   </span>
                 </div>
@@ -143,7 +143,7 @@ export default function JobPage() {
           <div className={styles.sectionHeader}>
             <h2 className={styles.sectionTitle}>Applicant Pipeline</h2>
             <div className={styles.searchWrap}>
-              <Icon name="search" opticalSize={20} />
+              <Icon name="search" size={16} />
               <input
                 type="text"
                 placeholder="Search by name or email..."
@@ -159,7 +159,7 @@ export default function JobPage() {
                     setCurrentPage(1);
                   }}
                 >
-                  <Icon name="close" opticalSize={20} />
+                  <Icon name="close" size={16} />
                 </button>
               )}
             </div>
@@ -247,7 +247,7 @@ export default function JobPage() {
                     disabled={currentPage === 1}
                     className={styles.pageButton}
                   >
-                    <Icon name="chevron_left" opticalSize={20} />
+                    <Icon name="chevron_left" size={16} />
                   </button>
                   <span className={styles.pageInfo}>
                     Page {currentPage} of {totalPages}
@@ -257,7 +257,7 @@ export default function JobPage() {
                     disabled={currentPage === totalPages}
                     className={styles.pageButton}
                   >
-                    <Icon name="chevron_right" opticalSize={20} />
+                    <Icon name="chevron_right" size={16} />
                   </button>
                 </div>
               )}

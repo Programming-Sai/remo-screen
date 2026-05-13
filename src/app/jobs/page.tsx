@@ -179,7 +179,7 @@ export default function JobsPage() {
             {/* Show "all loaded" message */}
             {!hasMore && visibleJobs.length > 0 && (
               <div className={styles.allLoaded}>
-                <Icon name="check_circle" opticalSize={20} />
+                <Icon name="check_circle" size={16} />
                 <p>All {filteredJobs.length} jobs loaded</p>
               </div>
             )}
