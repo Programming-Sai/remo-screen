@@ -12,6 +12,7 @@ import { useToast } from "@/contexts/ToastContext";
 import styles from "./page.module.css";
 import { Header } from "@/components/ui/Header/Header";
 import { Icon } from "@/components/ui/Icon/Icon";
+import NotFoundState from "@/components/ui/NotFoundState/NotFoundState";
 
 const ITEMS_PER_PAGE = 5;
 
@@ -63,7 +64,31 @@ export default function JobPage() {
     });
   };
 
-  if (!job) return <p>Job not found</p>;
+  if (!job) {
+    return (
+      <main className={styles.page}>
+        <Header />
+
+        <div className={styles.content}>
+          <NotFoundState
+            eyebrow="Missing job"
+            icon="work_off"
+            title="This job could not be found"
+            description="The job may have been removed, or the link might be stale."
+            bullets={[
+              "Go back to the jobs page and open another opening.",
+              "If you expected to see this job, refresh after checking the seed data.",
+            ]}
+            primaryAction={{
+              label: "Back to Jobs",
+              href: "/jobs",
+              icon: "arrow_back",
+            }}
+          />
+        </div>
+      </main>
+    );
+  }
 
   return (
     <main className={styles.page}>

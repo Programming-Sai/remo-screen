@@ -16,6 +16,7 @@ import ScreeningWelcomeStep from "@/components/candidate/ScreeningWelcomeStep/Sc
 import ScreeningQuestionStep from "@/components/candidate/ScreeningQuestionStep/ScreeningQuestionStep";
 import ScreeningCompletionStep from "@/components/candidate/ScreeningCompletionStep/ScreeningCompletionStep";
 import { useToast } from "@/contexts/ToastContext";
+import NotFoundState from "@/components/ui/NotFoundState/NotFoundState";
 
 type ScreenState = "welcome" | "question" | "complete";
 
@@ -34,8 +35,55 @@ export default function ScreeningPage() {
   const [error, setError] = useState<string>("");
   const { showToast } = useToast();
 
-  if (!job) return <p>Job not found</p>;
-  if (!screening) return <p>No screening found</p>;
+  if (!job) {
+    return (
+      <ScreeningShell>
+        <NotFoundState
+          eyebrow="Missing job"
+          icon="work_off"
+          title="This screening job could not be found"
+          description="The screening link may be outdated, or the job may have been removed."
+          bullets={[
+            "Go back to the recruiter jobs page and confirm the job still exists.",
+            "If you were sent this link, ask the recruiter to resend the updated candidate link.",
+          ]}
+          primaryAction={{
+            label: "Back to Jobs",
+            href: "/jobs",
+            icon: "arrow_back",
+          }}
+        />
+      </ScreeningShell>
+    );
+  }
+
+  if (!screening) {
+    return (
+      <ScreeningShell>
+        <NotFoundState
+          eyebrow="No screening"
+          icon="quiz_off"
+          title="This job does not have a screening yet"
+          description="Recruiters need to generate questions before candidates can start this link."
+          bullets={[
+            "If you are the recruiter, open the job detail page and create a screening first.",
+            "If you are a candidate, check back once the recruiter shares the live link.",
+          ]}
+          primaryAction={{
+            label: "Back to Job",
+            href: `/jobs/${job.id}`,
+            icon: "work",
+          }}
+          secondaryAction={{
+            label: "Back to Jobs",
+            href: "/jobs",
+            icon: "work",
+            variant: "secondary",
+          }}
+        />
+      </ScreeningShell>
+    );
+  }
 
   const questions = screening.questions;
   const currentQuestion = questions[questionIndex];

@@ -17,7 +17,8 @@ import { AnalysisResult } from "@/types";
 import styles from "./page.module.css";
 import { Header } from "@/components/ui/Header/Header";
 import { Icon } from "@/components/ui/Icon/Icon";
-import AudioPlayer from "@/components/recruiter/CreateScreeningModal/AudioPlayer/AudioPlayer";
+import AudioPlayer from "@/components/recruiter/AudioPlayer/AudioPlayer";
+import NotFoundState from "@/components/ui/NotFoundState/NotFoundState";
 
 export default function ApplicantPage() {
   const params = useParams();
@@ -33,8 +34,63 @@ export default function ApplicantPage() {
     getAnalysisBySubmissionId(applicantId) ?? null,
   );
 
-  if (!submission) return <p>Applicant not found</p>;
-  if (!job) return <p>Job not found</p>;
+  if (!job) {
+    return (
+      <main className={styles.page}>
+        <Header />
+
+        <div className={styles.content}>
+          <NotFoundState
+            eyebrow="Missing job"
+            icon="work_off"
+            title="We could not find that job"
+            description="The applicant link points to a job that no longer exists or was typed incorrectly."
+            bullets={[
+              "Return to the jobs page and open the correct job detail view.",
+              "If this is unexpected, check that the job seed data still includes this ID.",
+            ]}
+            primaryAction={{
+              label: "Back to Jobs",
+              href: "/jobs",
+              icon: "arrow_back",
+            }}
+          />
+        </div>
+      </main>
+    );
+  }
+
+  if (!submission) {
+    return (
+      <main className={styles.page}>
+        <Header />
+
+        <div className={styles.content}>
+          <NotFoundState
+            eyebrow="Missing applicant"
+            icon="person_off"
+            title="This applicant submission was not found"
+            description="The review link may be stale, or the candidate may not have submitted this screening yet."
+            bullets={[
+              "Return to the job detail page to review the applicant pipeline.",
+              "If the candidate has not submitted yet, check back after they complete the screening.",
+            ]}
+            primaryAction={{
+              label: "Back to Job",
+              href: `/jobs/${job.id}`,
+              icon: "arrow_back",
+            }}
+            secondaryAction={{
+              label: "Back to Jobs",
+              href: "/jobs",
+              icon: "work",
+              variant: "secondary",
+            }}
+          />
+        </div>
+      </main>
+    );
+  }
 
   const submissionId = submission.id;
   const questionMap = new Map(
