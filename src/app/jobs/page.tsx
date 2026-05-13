@@ -47,7 +47,8 @@ export default function JobsPage() {
         };
       })
       .sort((a, b) => {
-        if (!a.lastScreeningAt && !b.lastScreeningAt) return a.job.title.localeCompare(b.job.title);
+        if (!a.lastScreeningAt && !b.lastScreeningAt)
+          return a.job.title.localeCompare(b.job.title);
         if (!a.lastScreeningAt) return 1;
         if (!b.lastScreeningAt) return -1;
         return (
@@ -125,7 +126,7 @@ export default function JobsPage() {
             onClick={() => setIsModalOpen(true)}
           >
             <Icon name="add" />
-            <p>Create Phone Screening</p>
+            <p>Create Screening</p>
           </button>
         </header>
 
@@ -214,13 +215,13 @@ export default function JobsPage() {
 
       {/* Back to Top Button */}
       {showBackToTop && (
-      <button
-        onClick={scrollToTop}
-        className={styles.backToTop}
-        aria-label="Back to top"
-      >
-        <Icon name="arrow_upward" />
-      </button>
+        <button
+          onClick={scrollToTop}
+          className={styles.backToTop}
+          aria-label="Back to top"
+        >
+          <Icon name="arrow_upward" />
+        </button>
       )}
     </main>
   );
