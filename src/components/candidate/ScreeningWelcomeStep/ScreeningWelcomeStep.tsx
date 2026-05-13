@@ -36,7 +36,6 @@ export default function ScreeningWelcomeStep({
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    console.log("Form submitted", { candidateName, candidateEmail });
     onStart();
   };
 

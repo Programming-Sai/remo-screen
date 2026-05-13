@@ -1,25 +1,23 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 import { useParams } from "next/navigation";
 import Link from "next/link";
 
 import { jobs } from "@/data/jobs";
-import { getScreeningByJobId, getSubmissionById } from "@/lib/storage";
+import {
+  getAnalysisBySubmissionId,
+  getScreeningsByJob,
+  getSubmissionById,
+  saveAnalysis,
+} from "@/lib/storage";
 import { formatRelativeTime } from "@/lib/timeFormat";
+import { AnalysisResult } from "@/types";
 
 import styles from "./page.module.css";
 import { Header } from "@/components/ui/Header/Header";
 import { Icon } from "@/components/ui/Icon/Icon";
 import AudioPlayer from "@/components/recruiter/CreateScreeningModal/AudioPlayer/AudioPlayer";
-import { Submission } from "@/types";
-
-type AnalysisResult = {
-  summary: string;
-  strengths: string[];
-  concerns: string[];
-  recommendation: "advance" | "reject" | "hold";
-};
 
 export default function ApplicantPage() {
   const params = useParams();
@@ -27,53 +25,26 @@ export default function ApplicantPage() {
   const applicantId = params?.applicantId as string;
 
   const job = useMemo(() => jobs.find((j) => j.id === jobId), [jobId]);
-  const screening = getScreeningByJobId(jobId);
+  const screening = getScreeningsByJob(jobId)[0];
   const submission = getSubmissionById(applicantId);
 
   const [loading, setLoading] = useState(false);
-  const [analysis, setAnalysis] = useState<AnalysisResult | null>(null);
-  const [transcriptLoading, setTranscriptLoading] = useState<
-    Record<string, boolean>
-  >({});
-  const [transcripts, setTranscripts] = useState<Record<string, string>>({});
-
-  // Early returns - must be after all hooks
-
-  const questionMap = new Map(
-    screening?.questions.map((question) => [question.id, question.text]) ?? [],
+  const [analysis, setAnalysis] = useState<AnalysisResult | null>(
+    getAnalysisBySubmissionId(applicantId) ?? null,
   );
-
-  // Simulate transcript loading for audio answers
-  useEffect(() => {
-    if (!submission) return;
-
-    submission.answers.forEach((answer) => {
-      if (answer.responseType === "audio" && !transcripts[answer.questionId]) {
-        setTranscriptLoading((prev) => ({
-          ...prev,
-          [answer.questionId]: true,
-        }));
-        setTimeout(() => {
-          setTranscripts((prev) => ({
-            ...prev,
-            [answer.questionId]: answer.value,
-          }));
-          setTranscriptLoading((prev) => ({
-            ...prev,
-            [answer.questionId]: false,
-          }));
-        }, 1800);
-      }
-    });
-  }, [submission, transcripts]);
 
   if (!submission) return <p>Applicant not found</p>;
   if (!job) return <p>Job not found</p>;
 
+  const submissionId = submission.id;
+  const questionMap = new Map(
+    screening?.questions.map((question) => [question.id, question.text]) ?? [],
+  );
+
   function analyze() {
     setLoading(true);
     setTimeout(() => {
-      setAnalysis({
+      const nextAnalysis: AnalysisResult = {
         summary:
           "Candidate shows solid communication, structured thinking, and a clear approach to problem solving.",
         strengths: [
@@ -83,7 +54,10 @@ export default function ApplicantPage() {
         ],
         concerns: ["Limited system design depth"],
         recommendation: "advance",
-      });
+      };
+
+      saveAnalysis(submissionId, nextAnalysis);
+      setAnalysis(nextAnalysis);
       setLoading(false);
     }, 1200);
   }
@@ -95,9 +69,9 @@ export default function ApplicantPage() {
       <main className={styles.content}>
         <div className={styles.breadcrumbs}>
           <Link href="/jobs">Jobs</Link>
-          <span>›</span>
+          <span>&gt;</span>
           <Link href={`/jobs/${job.id}`}>{job.title}</Link>
-          <span>›</span>
+          <span>&gt;</span>
           <span className={styles.breadcrumbCurrent}>Applicant</span>
         </div>
 
@@ -128,66 +102,9 @@ export default function ApplicantPage() {
               </div>
             </div>
           </div>
-
-          <button
-            className={styles.analysisButton}
-            onClick={analyze}
-            disabled={loading}
-          >
-            {loading ? "Analyzing..." : "Analyze Response"}
-          </button>
         </div>
 
         <div className={styles.layout}>
-          <section className={styles.responsesColumn}>
-            <h2 className={styles.sectionTitle}>Screening Responses</h2>
-
-            <div className={styles.responseList}>
-              {submission.answers.map((answer, index) => {
-                const questionText =
-                  questionMap.get(answer.questionId) ?? `Question ${index + 1}`;
-
-                return (
-                  <article
-                    key={answer.questionId}
-                    className={styles.responseCard}
-                  >
-                    <div className={styles.questionRow}>
-                      <span className={styles.questionTag}>Q{index + 1}</span>
-                      <p className={styles.questionText}>{questionText}</p>
-                    </div>
-
-                    <div className={styles.answerPanel}>
-                      {answer.responseType === "audio" ? (
-                        <>
-                          <AudioPlayer />
-                          <div className={styles.transcriptSection}>
-                            {transcriptLoading[answer.questionId] ? (
-                              <div className={styles.transcriptLoading}>
-                                <Icon name="mic" size={16} />
-                                <span>Processing transcript...</span>
-                              </div>
-                            ) : transcripts[answer.questionId] ? (
-                              <p className={styles.transcript}>
-                                {transcripts[answer.questionId]}
-                              </p>
-                            ) : (
-                              <p className={styles.transcriptPlaceholder}>
-                                Transcript will appear after analysis.
-                              </p>
-                            )}
-                          </div>
-                        </>
-                      ) : (
-                        <p className={styles.textAnswer}>{answer.value}</p>
-                      )}
-                    </div>
-                  </article>
-                );
-              })}
-            </div>
-          </section>
-
           <aside className={styles.analysisColumn}>
             <div className={styles.analysisCard}>
               <div className={styles.analysisHeader}>
@@ -203,6 +120,11 @@ export default function ApplicantPage() {
 
               {analysis ? (
                 <div className={styles.analysisBody}>
+                  <p className={styles.cacheNote}>
+                    Cached locally for this submission. Regenerate if you want a
+                    fresh analysis.
+                  </p>
+
                   <section className={styles.analysisSection}>
                     <h3 className={styles.analysisLabel}>Summary</h3>
                     <p className={styles.analysisText}>{analysis.summary}</p>
@@ -263,8 +185,10 @@ export default function ApplicantPage() {
                       <button
                         className={styles.primaryAnalysisButton}
                         type="button"
+                        onClick={analyze}
+                        disabled={loading}
                       >
-                        Schedule Interview
+                        {loading ? "Regenerating..." : "Regenerate Analysis"}
                       </button>
                     </div>
                   </section>
@@ -273,10 +197,57 @@ export default function ApplicantPage() {
                 <div className={styles.analysisPlaceholder}>
                   <Icon name="psychology" size={32} />
                   <p>Run analysis to generate recruiter guidance.</p>
+                  <button
+                    className={styles.primaryAnalysisButton}
+                    type="button"
+                    onClick={analyze}
+                    disabled={loading}
+                  >
+                    {loading ? "Analyzing..." : "Analyze Response"}
+                  </button>
                 </div>
               )}
             </div>
           </aside>
+
+          <section className={styles.responsesColumn}>
+            <h2 className={styles.sectionTitle}>Screening Responses</h2>
+
+            <div className={styles.responseList}>
+              {submission.answers.map((answer, index) => {
+                const questionText =
+                  questionMap.get(answer.questionId) ?? `Question ${index + 1}`;
+
+                return (
+                  <article
+                    key={answer.questionId}
+                    className={styles.responseCard}
+                  >
+                    <div className={styles.questionRow}>
+                      <span className={styles.questionTag}>Q{index + 1}</span>
+                      <p className={styles.questionText}>{questionText}</p>
+                    </div>
+
+                    <div className={styles.answerPanel}>
+                      {answer.responseType === "audio" ? (
+                        <>
+                          <AudioPlayer hasAudio />
+                          <div className={styles.transcriptSection}>
+                            <p className={styles.transcriptPlaceholder}>
+                              {answer.value ||
+                                "Transcript will appear after analysis."}
+                            </p>
+                          </div>
+                        </>
+                      ) : (
+                        <p className={styles.textAnswer}>{answer.value}</p>
+                      )}
+                    </div>
+                  </article>
+                );
+              })}
+            </div>
+          </section>
         </div>
       </main>
     </div>

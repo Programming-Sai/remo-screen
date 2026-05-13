@@ -355,6 +355,17 @@
   margin-bottom: 16px;
 }
 
+.audioPlaceholderButton {
+  border: none;
+  border-radius: var(--radius-full);
+  padding: 10px 16px;
+  background: rgba(216, 218, 220, 0.65);
+  color: var(--on-surface-variant);
+  font-size: 14px;
+  font-weight: 700;
+  cursor: not-allowed;
+}
+
 .audioIconWrap {
   width: 56px;
   height: 56px;

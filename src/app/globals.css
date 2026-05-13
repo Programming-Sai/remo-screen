@@ -87,6 +87,15 @@ a {
   text-decoration: none;
 }
 
+a:focus-visible,
+button:focus-visible,
+input:focus-visible,
+select:focus-visible,
+textarea:focus-visible {
+  outline: 2px solid var(--primary-container);
+  outline-offset: 2px;
+}
+
 .toast-container {
   position: fixed;
   bottom: 24px;

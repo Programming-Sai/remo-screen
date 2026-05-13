@@ -1,11 +1,11 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
-import { useRouter } from "next/navigation";
+import Link from "next/link";
 
 import { jobs } from "@/data/jobs";
 import CreateScreeningModal from "@/components/recruiter/CreateScreeningModal/CreateScreeningModal";
-import { getSubmissionsByJob } from "@/lib/storage";
+import { getScreeningsByJob } from "@/lib/storage";
 
 import styles from "./page.module.css";
 import { Header } from "@/components/ui/Header/Header";
@@ -14,12 +14,11 @@ import { Icon } from "@/components/ui/Icon/Icon";
 const ITEMS_PER_PAGE = 9;
 
 export default function JobsPage() {
-  const router = useRouter();
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [search, setSearch] = useState("");
   const [displayCount, setDisplayCount] = useState(ITEMS_PER_PAGE);
   const [isLoading, setIsLoading] = useState(false);
-  const [showBackToTop, setShowBackToTop] = useState(false); // Add this
+  const [showBackToTop, setShowBackToTop] = useState(false);
 
   const loaderRef = useRef<HTMLDivElement>(null);
 
@@ -37,11 +36,32 @@ export default function JobsPage() {
     });
   }, [search]);
 
-  const visibleJobs = useMemo(() => {
-    return filteredJobs.slice(0, displayCount);
-  }, [filteredJobs, displayCount]);
+  const jobsWithCounts = useMemo(() => {
+    return filteredJobs
+      .map((job) => {
+        const screenings = getScreeningsByJob(job.id);
+        return {
+          job,
+          screeningCount: screenings.length,
+          lastScreeningAt: screenings[0]?.createdAt ?? null,
+        };
+      })
+      .sort((a, b) => {
+        if (!a.lastScreeningAt && !b.lastScreeningAt) return a.job.title.localeCompare(b.job.title);
+        if (!a.lastScreeningAt) return 1;
+        if (!b.lastScreeningAt) return -1;
+        return (
+          new Date(b.lastScreeningAt).getTime() -
+          new Date(a.lastScreeningAt).getTime()
+        );
+      });
+  }, [filteredJobs]);
 
-  const hasMore = displayCount < filteredJobs.length;
+  const visibleJobs = useMemo(() => {
+    return jobsWithCounts.slice(0, displayCount);
+  }, [jobsWithCounts, displayCount]);
+
+  const hasMore = displayCount < jobsWithCounts.length;
 
   // Infinite scroll observer
   useEffect(() => {
@@ -67,7 +87,7 @@ export default function JobsPage() {
     }
 
     return () => observer.disconnect();
-  }, [hasMore, isLoading, filteredJobs.length]);
+  }, [hasMore, isLoading, jobsWithCounts.length, filteredJobs.length]);
 
   // Back to top visibility - SIMPLE VERSION
   useEffect(() => {
@@ -131,11 +151,11 @@ export default function JobsPage() {
         ) : (
           <>
             <section className={styles.grid}>
-              {visibleJobs.map((job) => (
-                <article
+              {visibleJobs.map(({ job, screeningCount }) => (
+                <Link
                   key={job.id}
+                  href={`/jobs/${job.id}`}
                   className={`${styles.card} ${styles.secondaryCard}`}
-                  onClick={() => router.push(`/jobs/${job.id}`)}
                 >
                   <div className={styles.cardTopCompact}>
                     <span className={styles.badgeSoft}>
@@ -151,17 +171,17 @@ export default function JobsPage() {
                     </div>
                     <div className={styles.compactLine}>
                       <Icon name="group" />
-                      <p>{getSubmissionsByJob(job.id).length}</p>
-                      Applicants
+                      <p>{screeningCount}</p>
+                      Screening{screeningCount === 1 ? "" : "s"}
                     </div>
                   </div>
 
                   <div className={styles.secondaryFooter}>
-                    <button className={styles.roundButton} type="button">
+                    <span className={styles.roundButton}>
                       <Icon name="chevron_right" />
-                    </button>
+                    </span>
                   </div>
-                </article>
+                </Link>
               ))}
             </section>
 
@@ -180,7 +200,7 @@ export default function JobsPage() {
             {!hasMore && visibleJobs.length > 0 && (
               <div className={styles.allLoaded}>
                 <Icon name="check_circle" size={16} />
-                <p>All {filteredJobs.length} jobs loaded</p>
+                <p>All {jobsWithCounts.length} jobs loaded</p>
               </div>
             )}
           </>

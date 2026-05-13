@@ -1,19 +1,7 @@
 import type { Metadata } from "next";
-import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
-import { seedJobs } from "@/lib/storage";
-import { jobs } from "@/data/jobs";
 import { ToastProvider } from "@/contexts/ToastContext";
-
-const geistSans = Geist({
-  variable: "--font-geist-sans",
-  subsets: ["latin"],
-});
-
-const geistMono = Geist_Mono({
-  variable: "--font-geist-mono",
-  subsets: ["latin"],
-});
+import { AppBootstrap } from "@/components/AppBootstrap";
 
 export const metadata: Metadata = {
   title: "RemoScreen",
@@ -25,11 +13,11 @@ export default function RootLayout({
 }: Readonly<{
   children: React.ReactNode;
 }>) {
-  seedJobs(jobs);
   return (
-    <html lang="en" className={`${geistSans.variable} ${geistMono.variable}`}>
+    <html lang="en">
       <body>
         <ToastProvider>{children}</ToastProvider>
+        <AppBootstrap />
       </body>
     </html>
   );

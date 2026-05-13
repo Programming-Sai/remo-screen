@@ -40,6 +40,19 @@
   background: #f2f4f6;
 }
 
+.closeButton:focus-visible,
+.generateButton:focus-visible,
+.removeButton:focus-visible,
+.addButton:focus-visible,
+.secondaryButton:focus-visible,
+.primaryButton:focus-visible,
+.responseSelect:focus-visible,
+.moveButton:focus-visible,
+.editButton:focus-visible {
+  outline: 2px solid #ff784b;
+  outline-offset: 2px;
+}
+
 .body {
   flex: 1;
 
@@ -162,6 +175,104 @@
   display: flex;
   flex-direction: column;
   gap: 16px;
+  cursor: grab;
+}
+
+.questionCard:active {
+  cursor: grabbing;
+}
+
+.questionDragging {
+  opacity: 0.82;
+  cursor: grabbing;
+}
+
+.questionDropTarget {
+  border-color: #ff784b;
+  box-shadow: 0 0 0 2px rgba(255, 120, 75, 0.12);
+}
+
+.questionHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.questionHeaderLeft {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+}
+
+.dragIcon {
+  width: 30px;
+  height: 30px;
+  border-radius: 999px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(255, 120, 75, 0.12);
+  color: #a83910;
+  flex-shrink: 0;
+}
+
+.editButton {
+  width: 34px;
+  height: 34px;
+  border: none;
+  border-radius: 999px;
+  background: rgba(255, 120, 75, 0.12);
+  color: #a83910;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+}
+
+.editButton:hover {
+  background: rgba(255, 120, 75, 0.18);
+}
+
+.questionIndex {
+  display: inline-flex;
+  align-items: center;
+  padding: 6px 10px;
+  border-radius: 999px;
+  background: #f2f4f6;
+  color: #58423b;
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.questionActions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.moveButton {
+  width: 34px;
+  height: 34px;
+  border: none;
+  border-radius: 999px;
+  background: rgba(255, 120, 75, 0.12);
+  color: #a83910;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+}
+
+.moveButton:hover:not(:disabled) {
+  background: rgba(255, 120, 75, 0.18);
+}
+
+.moveButton:disabled {
+  opacity: 0.1;
+  cursor: not-allowed;
 }
 
 .questionTop {
@@ -184,6 +295,12 @@
   background: #f2f4f6;
 
   font-size: 15px;
+  caret-color: #a83910;
+}
+
+.questionInput[readonly] {
+  opacity: 0.75;
+  cursor: default;
 }
 
 .questionInput:focus {
@@ -206,6 +323,10 @@
 
 .removeButton:hover {
   background: #ffdad6;
+}
+
+.removeButton:disabled {
+  opacity: 0.12;
 }
 
 .questionFooter {
@@ -341,4 +462,33 @@
 .primaryButton:disabled {
   opacity: 0.5;
   cursor: not-allowed;
+}
+
+@media (max-width: 640px) {
+  .questionHeader {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .questionActions {
+    width: 100%;
+  }
+
+  .questionTop {
+    flex-direction: column;
+  }
+
+  .removeButton {
+    width: 100%;
+    height: 44px;
+  }
+
+  .footer {
+    flex-direction: column;
+  }
+
+  .secondaryButton,
+  .primaryButton {
+    width: 100%;
+  }
 }

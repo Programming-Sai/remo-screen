@@ -47,9 +47,15 @@ export default function ScreeningPage() {
   function startScreening() {
     const trimmedName = candidateName.trim();
     const trimmedEmail = candidateEmail.trim();
+    const emailIsValid = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(trimmedEmail);
 
     if (!trimmedName || !trimmedEmail) {
       setError("Please enter both name and email");
+      return;
+    }
+
+    if (!emailIsValid) {
+      setError("Please enter a valid email address");
       return;
     }
 

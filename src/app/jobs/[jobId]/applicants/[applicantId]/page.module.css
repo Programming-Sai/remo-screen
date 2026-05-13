@@ -27,7 +27,7 @@
 .headerRow {
   display: flex;
   align-items: flex-start;
-  justify-content: space-between;
+  justify-content: flex-start;
   gap: 24px;
   margin-bottom: 32px;
   flex-wrap: wrap;
@@ -46,8 +46,8 @@
   border-radius: var(--radius-full);
   display: grid;
   place-items: center;
-  background: var(--primary-fixed);
-  color: var(--on-primary-fixed);
+  background: rgba(255, 120, 75, 0.14);
+  color: var(--primary);
   font-size: 24px;
   font-weight: 700;
   flex-shrink: 0;
@@ -127,7 +127,7 @@
 
 .layout {
   display: grid;
-  grid-template-columns: minmax(0, 7fr) minmax(320px, 5fr);
+  grid-template-columns: minmax(320px, 5fr) minmax(0, 7fr);
   gap: 24px;
   align-items: start;
 }
@@ -263,6 +263,14 @@
   display: flex;
   flex-direction: column;
   gap: 24px;
+}
+
+.cacheNote {
+  font-size: 13px;
+  color: var(--on-surface-variant);
+  padding: 10px 12px;
+  border-radius: var(--radius-md);
+  background: var(--surface-container-low);
 }
 
 .analysisSection {

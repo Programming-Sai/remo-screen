@@ -38,3 +38,10 @@ export interface Submission {
   answers: Answer[];
   submittedAt: string;
 }
+
+export interface AnalysisResult {
+  summary: string;
+  strengths: string[];
+  concerns: string[];
+  recommendation: "advance" | "reject" | "hold";
+}

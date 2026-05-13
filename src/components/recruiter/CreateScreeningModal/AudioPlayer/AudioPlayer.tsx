@@ -6,12 +6,10 @@ import styles from "./AudioPlayer.module.css";
 
 interface AudioPlayerProps {
   hasAudio?: boolean;
-  src?: string; // kept for future real audio implementation
 }
 
 export default function AudioPlayer({
   hasAudio = false,
-  src: _src,
 }: AudioPlayerProps) {
   const [isPlaying, setIsPlaying] = useState(false);
   const [progress, setProgress] = useState(0);

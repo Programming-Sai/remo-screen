@@ -1,9 +1,30 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useRef, useState } from "react";
+import type { RefObject } from "react";
 import { useRouter } from "next/navigation";
 
+import {
+  closestCenter,
+  DndContext,
+  DragEndEvent,
+  DragOverEvent,
+  DragStartEvent,
+  PointerSensor,
+  useSensor,
+  useSensors,
+} from "@dnd-kit/core";
+import {
+  arrayMove,
+  SortableContext,
+  useSortable,
+  verticalListSortingStrategy,
+} from "@dnd-kit/sortable";
+import { CSS } from "@dnd-kit/utilities";
+import type { CSSProperties } from "react";
+
 import Modal from "@/components/ui/Modal/Modal";
+import { Icon } from "@/components/ui/Icon/Icon";
 
 import { jobs } from "@/data/jobs";
 import { generateQuestions } from "@/data/questions";
@@ -26,12 +47,30 @@ export default function CreateScreeningModal({
   jobId,
   onClose,
 }: CreateScreeningModalProps) {
-  const [selectedJobId, setSelectedJobId] = useState(jobId ?? "");
-
-  const [questions, setQuestions] = useState<Question[]>([]);
-
-  const [loading, setLoading] = useState(false);
+  const router = useRouter();
   const { showToast } = useToast();
+
+  const [selectedJobId, setSelectedJobId] = useState(jobId ?? "");
+  const [questions, setQuestions] = useState<Question[]>([]);
+  const [loading, setLoading] = useState(false);
+  const [activeQuestionId, setActiveQuestionId] = useState<string | null>(null);
+  const [overQuestionId, setOverQuestionId] = useState<string | null>(null);
+  const [editingQuestionId, setEditingQuestionId] = useState<string | null>(
+    null,
+  );
+  const questionRefs = useRef<Record<string, HTMLTextAreaElement | null>>({});
+
+  function registerQuestionRef(id: string, node: HTMLTextAreaElement | null) {
+    questionRefs.current[id] = node;
+  }
+
+  const sensors = useSensors(
+    useSensor(PointerSensor, {
+      activationConstraint: {
+        distance: 8,
+      },
+    }),
+  );
 
   function handleGenerateQuestions() {
     if (!selectedJobId) return;
@@ -41,19 +80,16 @@ export default function CreateScreeningModal({
     setTimeout(() => {
       const generated = generateQuestions(selectedJobId);
 
-      const formattedQuestions: Question[] = generated.map(
-        (question, index) => ({
-          id: crypto.randomUUID(),
-          text: question,
-          responseType: index === 0 ? "audio" : "text",
-          isCustom: false,
-        }),
-      );
+      const formattedQuestions: Question[] = generated.map((question) => ({
+        id: crypto.randomUUID(),
+        text: question,
+        responseType: "text",
+        isCustom: false,
+      }));
 
       setQuestions(formattedQuestions);
-
       setLoading(false);
-    }, 800);
+    }, 600);
   }
 
   function handleQuestionTextChange(id: string, value: string) {
@@ -67,18 +103,61 @@ export default function CreateScreeningModal({
   function handleResponseTypeChange(id: string, value: ResponseType) {
     setQuestions((prev) =>
       prev.map((question) =>
-        question.id === id
-          ? {
-              ...question,
-              responseType: value,
-            }
-          : question,
+        question.id === id ? { ...question, responseType: value } : question,
       ),
     );
   }
 
   function handleRemoveQuestion(id: string) {
     setQuestions((prev) => prev.filter((question) => question.id !== id));
+    if (editingQuestionId === id) {
+      setEditingQuestionId(null);
+    }
+  }
+
+  function handleMoveQuestion(id: string, direction: "up" | "down") {
+    setQuestions((prev) => {
+      const index = prev.findIndex((question) => question.id === id);
+      if (index === -1) return prev;
+
+      const targetIndex = direction === "up" ? index - 1 : index + 1;
+      if (targetIndex < 0 || targetIndex >= prev.length) return prev;
+
+      return arrayMove(prev, index, targetIndex);
+    });
+  }
+
+  function handleDragStart(event: DragStartEvent) {
+    setActiveQuestionId(String(event.active.id));
+  }
+
+  function handleDragOver(event: DragOverEvent) {
+    setOverQuestionId(event.over ? String(event.over.id) : null);
+  }
+
+  function handleDragEnd(event: DragEndEvent) {
+    const { active, over } = event;
+
+    if (over && active.id !== over.id) {
+      setQuestions((prev) => {
+        const oldIndex = prev.findIndex(
+          (question) => question.id === active.id,
+        );
+        const newIndex = prev.findIndex((question) => question.id === over.id);
+
+        if (oldIndex === -1 || newIndex === -1) return prev;
+
+        return arrayMove(prev, oldIndex, newIndex);
+      });
+    }
+
+    setActiveQuestionId(null);
+    setOverQuestionId(null);
+  }
+
+  function handleDragCancel() {
+    setActiveQuestionId(null);
+    setOverQuestionId(null);
   }
 
   function handleAddCustomQuestion() {
@@ -90,6 +169,18 @@ export default function CreateScreeningModal({
     };
 
     setQuestions((prev) => [...prev, newQuestion]);
+  }
+
+  function handleClose() {
+    if (!jobId) {
+      setSelectedJobId("");
+    }
+    setQuestions([]);
+    setLoading(false);
+    setActiveQuestionId(null);
+    setOverQuestionId(null);
+    setEditingQuestionId(null);
+    onClose();
   }
 
   function handleSaveScreening() {
@@ -110,20 +201,24 @@ export default function CreateScreeningModal({
     };
 
     saveScreening(screening);
+    if (!jobId) {
+      setSelectedJobId("");
+    }
+    setQuestions([]);
+    setLoading(false);
+    setActiveQuestionId(null);
+    setOverQuestionId(null);
+    setEditingQuestionId(null);
+    onClose();
+    router.push(`/jobs/${selectedJobId}`);
 
-    onClose(); // close modal
-    const jobUrl = `/screening/${selectedJobId}`;
-    const fullUrl = window.location.origin + jobUrl;
     showToast({
       type: "success",
       title: "Screening created",
-      message: "You can now share the link with candidates.",
-      actionLabel: "View Job",
-      onAction: () => {
-        // alert(`Action triggered! ${jobUrl}`);
-        window.open(fullUrl, "_blank");
-      },
-      duration: 10000,
+      message: "You can now share the candidate link from the job detail page.",
+      actionLabel: "Open Job",
+      onAction: () => router.push(`/jobs/${selectedJobId}`),
+      duration: 7000,
     });
   }
 
@@ -138,8 +233,12 @@ export default function CreateScreeningModal({
           </p>
         </div>
 
-        <button className={styles.closeButton} onClick={onClose}>
-          ✕
+        <button
+          className={styles.closeButton}
+          type="button"
+          onClick={handleClose}
+        >
+          <Icon name="close" />
         </button>
       </div>
 
@@ -176,6 +275,7 @@ export default function CreateScreeningModal({
 
           <button
             className={styles.generateButton}
+            type="button"
             onClick={handleGenerateQuestions}
             disabled={!selectedJobId || loading}
           >
@@ -189,67 +289,44 @@ export default function CreateScreeningModal({
               <h4>Screening Questions ({questions.length})</h4>
             </div>
 
-            <div className={styles.questions}>
-              {questions.map((question) => (
-                <div key={question.id} className={styles.questionCard}>
-                  <div className={styles.questionTop}>
-                    <textarea
-                      rows={3}
-                      className={styles.questionInput}
-                      placeholder="Enter question text..."
-                      value={question.text}
-                      onChange={(e) =>
-                        handleQuestionTextChange(question.id, e.target.value)
-                      }
+            <DndContext
+              sensors={sensors}
+              collisionDetection={closestCenter}
+              onDragStart={handleDragStart}
+              onDragOver={handleDragOver}
+              onDragEnd={handleDragEnd}
+              onDragCancel={handleDragCancel}
+            >
+              <SortableContext
+                items={questions.map((question) => question.id)}
+                strategy={verticalListSortingStrategy}
+              >
+                <div className={styles.questions}>
+                  {questions.map((question, index) => (
+                    <SortableQuestionCard
+                      key={question.id}
+                      question={question}
+                      index={index}
+                      totalQuestions={questions.length}
+                      onQuestionTextChange={handleQuestionTextChange}
+                      onRemoveQuestion={handleRemoveQuestion}
+                      onResponseTypeChange={handleResponseTypeChange}
+                      onMoveQuestion={handleMoveQuestion}
+                      registerQuestionRef={registerQuestionRef}
+                      questionRefs={questionRefs}
+                      editingQuestionId={editingQuestionId}
+                      setEditingQuestionId={setEditingQuestionId}
+                      isActive={activeQuestionId === question.id}
+                      isOver={overQuestionId === question.id}
                     />
-
-                    <button
-                      className={styles.removeButton}
-                      onClick={() => handleRemoveQuestion(question.id)}
-                    >
-                      ✕
-                    </button>
-                  </div>
-
-                  <div className={styles.questionFooter}>
-                    <span className={styles.responseLabel}>Response Type</span>
-
-                    <select
-                      className={styles.responseSelect}
-                      value={question.responseType}
-                      onChange={(e) =>
-                        handleResponseTypeChange(
-                          question.id,
-                          e.target.value as ResponseType,
-                        )
-                      }
-                    >
-                      <option value="text">Text</option>
-
-                      <option value="audio">Audio</option>
-                    </select>
-                  </div>
-
-                  {question.responseType === "audio" && (
-                    <div className={styles.audioPreview}>
-                      <div className={styles.audioIcon}>🎤</div>
-
-                      <div>
-                        <p>Audio response enabled</p>
-
-                        <span>
-                          Candidates will record an audio response for this
-                          question.
-                        </span>
-                      </div>
-                    </div>
-                  )}
+                  ))}
                 </div>
-              ))}
-            </div>
+              </SortableContext>
+            </DndContext>
 
             <button
               className={styles.addButton}
+              type="button"
               onClick={handleAddCustomQuestion}
             >
               + Add Custom Question
@@ -259,12 +336,17 @@ export default function CreateScreeningModal({
       </div>
 
       <div className={styles.footer}>
-        <button className={styles.secondaryButton} onClick={onClose}>
+        <button
+          className={styles.secondaryButton}
+          type="button"
+          onClick={handleClose}
+        >
           Discard
         </button>
 
         <button
           className={styles.primaryButton}
+          type="button"
           onClick={handleSaveScreening}
           disabled={!selectedJobId || questions.length === 0}
         >
@@ -272,5 +354,173 @@ export default function CreateScreeningModal({
         </button>
       </div>
     </Modal>
+  );
+}
+
+interface SortableQuestionCardProps {
+  question: Question;
+  index: number;
+  totalQuestions: number;
+  isActive: boolean;
+  isOver: boolean;
+  onQuestionTextChange: (id: string, value: string) => void;
+  onResponseTypeChange: (id: string, value: ResponseType) => void;
+  onRemoveQuestion: (id: string) => void;
+  onMoveQuestion: (id: string, direction: "up" | "down") => void;
+  registerQuestionRef: (id: string, node: HTMLTextAreaElement | null) => void;
+  questionRefs: RefObject<Record<string, HTMLTextAreaElement | null>>;
+  editingQuestionId: string | null;
+  setEditingQuestionId: (id: string | null) => void;
+}
+
+function SortableQuestionCard({
+  question,
+  index,
+  totalQuestions,
+  isActive,
+  isOver,
+  onQuestionTextChange,
+  onResponseTypeChange,
+  onRemoveQuestion,
+  onMoveQuestion,
+  registerQuestionRef,
+  questionRefs,
+  editingQuestionId,
+  setEditingQuestionId,
+}: SortableQuestionCardProps) {
+  const {
+    attributes,
+    listeners,
+    setNodeRef,
+    transform,
+    transition,
+    isDragging,
+  } = useSortable({ id: question.id });
+
+  const cardStyle: CSSProperties = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+  };
+  const isEditing = editingQuestionId === question.id;
+
+  function toggleEdit() {
+    if (isEditing) {
+      setEditingQuestionId(null);
+      return;
+    }
+
+    setEditingQuestionId(question.id);
+    window.setTimeout(() => {
+      questionRefs.current?.[question.id]?.focus();
+    }, 0);
+  }
+
+  return (
+    <div
+      ref={setNodeRef}
+      className={`${styles.questionCard} ${
+        isDragging || isActive ? styles.questionDragging : ""
+      } ${isOver ? styles.questionDropTarget : ""}`.trim()}
+      style={cardStyle}
+      {...attributes}
+      {...listeners}
+    >
+      <div className={styles.questionHeader}>
+        <div className={styles.questionHeaderLeft}>
+          <span className={styles.dragIcon} aria-hidden="true">
+            <Icon name="drag_indicator" size={18} />
+          </span>
+
+          <span className={styles.questionIndex}>
+            {question.isCustom ? "Custom question" : `Question ${index + 1}`}
+          </span>
+        </div>
+
+        <div className={styles.questionActions}>
+          <button
+            className={styles.editButton}
+            type="button"
+            onClick={toggleEdit}
+            aria-label={isEditing ? "Finish editing question" : "Edit question"}
+          >
+            <Icon name="edit" size={18} />
+          </button>
+          <button
+            className={styles.moveButton}
+            type="button"
+            onClick={() => onMoveQuestion(question.id, "up")}
+            disabled={index === 0}
+            aria-label="Move question up"
+          >
+            <Icon name="keyboard_arrow_up" />
+          </button>
+          <button
+            className={styles.moveButton}
+            type="button"
+            onClick={() => onMoveQuestion(question.id, "down")}
+            disabled={index === totalQuestions - 1}
+            aria-label="Move question down"
+          >
+            <Icon name="keyboard_arrow_down" />
+          </button>
+        </div>
+      </div>
+
+      <div className={styles.questionTop}>
+        <textarea
+          rows={3}
+          ref={(node) => registerQuestionRef(question.id, node)}
+          className={styles.questionInput}
+          readOnly={!isEditing}
+          aria-readonly={!isEditing}
+          onPointerDown={(e) => e.stopPropagation()}
+          placeholder="Enter question text..."
+          value={question.text}
+          onChange={(e) => onQuestionTextChange(question.id, e.target.value)}
+          onKeyDown={(e) => e.stopPropagation()}
+        />
+
+        <button
+          className={styles.removeButton}
+          type="button"
+          aria-label="Delete question"
+          onPointerDown={(e) => e.stopPropagation()}
+          onClick={() => onRemoveQuestion(question.id)}
+        >
+          <Icon name="delete_outline" size={18} />
+        </button>
+      </div>
+
+      <div className={styles.questionFooter}>
+        <span className={styles.responseLabel}>Response Type</span>
+
+        <select
+          className={styles.responseSelect}
+          value={question.responseType}
+          onChange={(e) =>
+            onResponseTypeChange(question.id, e.target.value as ResponseType)
+          }
+        >
+          <option value="text">Text</option>
+          <option value="audio">Audio</option>
+        </select>
+      </div>
+
+      {question.responseType === "audio" && (
+        <div className={styles.audioPreview}>
+          <div className={styles.audioIcon}>
+            <Icon name="mic" />
+          </div>
+
+          <div>
+            <p>Audio response enabled</p>
+
+            <span>
+              Candidates will record an audio response for this question.
+            </span>
+          </div>
+        </div>
+      )}
+    </div>
   );
 }

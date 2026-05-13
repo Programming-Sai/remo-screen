@@ -64,6 +64,9 @@ export default function ScreeningQuestionStep({
               <p className={styles.audioText}>
                 For this demo, please use a text response below.
               </p>
+              <button className={styles.audioPlaceholderButton} type="button" disabled>
+                Record Audio
+              </button>
             </div>
           )}
 

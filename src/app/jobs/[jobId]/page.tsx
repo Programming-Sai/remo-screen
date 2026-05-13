@@ -6,7 +6,7 @@ import { useParams, useRouter } from "next/navigation";
 
 import { jobs } from "@/data/jobs";
 import CreateScreeningModal from "@/components/recruiter/CreateScreeningModal/CreateScreeningModal";
-import { getScreeningByJobId, getSubmissionsByJob } from "@/lib/storage";
+import { getScreeningsByJob, getSubmissionsByJob } from "@/lib/storage";
 import { useToast } from "@/contexts/ToastContext";
 
 import styles from "./page.module.css";
@@ -25,18 +25,15 @@ export default function JobPage() {
 
   const jobId = params?.jobId as string;
 
-  const job = useMemo(() => {
-    return jobs.find((j) => j.id === jobId);
-  }, [jobId]);
-
-  const screening = getScreeningByJobId(jobId);
+  const job = useMemo(() => jobs.find((j) => j.id === jobId), [jobId]);
+  const screenings = getScreeningsByJob(jobId);
+  const screening = screenings[0];
   const submissions = getSubmissionsByJob(jobId);
+  const screeningPath = `/screening/${jobId}`;
 
-  const screeningLink = `${typeof window !== "undefined" ? window.location.origin : ""}/screening/${jobId}`;
-
-  // Filter submissions by search term (name or email)
   const filteredSubmissions = useMemo(() => {
     if (!searchTerm.trim()) return submissions;
+
     const term = searchTerm.toLowerCase();
     return submissions.filter(
       (sub) =>
@@ -45,13 +42,6 @@ export default function JobPage() {
     );
   }, [submissions, searchTerm]);
 
-  // Reset to page 1 when search changes
-  const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setSearchTerm(e.target.value);
-    setCurrentPage(1);
-  };
-
-  // Pagination
   const totalPages = Math.ceil(filteredSubmissions.length / ITEMS_PER_PAGE);
   const paginatedSubmissions = useMemo(() => {
     const start = (currentPage - 1) * ITEMS_PER_PAGE;
@@ -63,7 +53,9 @@ export default function JobPage() {
   };
 
   const handleCopy = () => {
-    navigator.clipboard.writeText(screeningLink);
+    navigator.clipboard.writeText(
+      `${window.location.origin}${screeningPath}`,
+    );
     showToast({
       type: "success",
       title: "Link copied",
@@ -77,10 +69,10 @@ export default function JobPage() {
     <main className={styles.page}>
       <Header />
 
-      <main className={styles.content}>
+      <div className={styles.content}>
         <div className={styles.breadcrumbs}>
           <Link href="/jobs">Jobs</Link>
-          <span>›</span>
+          <span>&gt;</span>
           <span className={styles.breadcrumbCurrent}>{job.title}</span>
         </div>
 
@@ -99,7 +91,9 @@ export default function JobPage() {
                   </span>
                   <span>
                     <Icon name="quiz" size={16} />
-                    {screening ? "Screening created" : "No screening yet"}
+                    {screening
+                      ? `Screening created${screenings.length > 1 ? ` (${screenings.length})` : ""}`
+                      : "No screening yet"}
                   </span>
                 </div>
               </div>
@@ -110,7 +104,7 @@ export default function JobPage() {
                 onClick={() => setIsModalOpen(true)}
               >
                 <Icon name="add" />
-                {screening ? "Edit Screening" : "Create Screening"}
+                {screening ? "Create Another Screening" : "Create Screening"}
               </button>
             </div>
 
@@ -128,12 +122,12 @@ export default function JobPage() {
                 <input
                   className={styles.linkInput}
                   readOnly
-                  value={screeningLink}
+                  value={screeningPath}
                 />
                 <button
                   className={styles.copyButton}
                   type="button"
-                  onClick={() => handleCopy()}
+                  onClick={handleCopy}
                 >
                   Copy
                 </button>
@@ -159,12 +153,16 @@ export default function JobPage() {
                 type="text"
                 placeholder="Search by name or email..."
                 value={searchTerm}
-                onChange={handleSearchChange}
+                onChange={(e) => {
+                  setSearchTerm(e.target.value);
+                  setCurrentPage(1);
+                }}
                 className={styles.searchInput}
               />
               {searchTerm && (
                 <button
                   className={styles.clearSearch}
+                  type="button"
                   onClick={() => {
                     setSearchTerm("");
                     setCurrentPage(1);
@@ -178,9 +176,7 @@ export default function JobPage() {
 
           {filteredSubmissions.length === 0 ? (
             <div className={styles.emptyState}>
-              <h3>
-                {searchTerm ? "No matching applicants" : "No applicants yet"}
-              </h3>
+              <h3>{searchTerm ? "No matching applicants" : "No applicants yet"}</h3>
               <p>
                 {searchTerm
                   ? "Try a different name or email."
@@ -227,18 +223,14 @@ export default function JobPage() {
                           <span className={styles.statusChip}>Submitted</span>
                         </td>
                         <td className={styles.appliedAt}>
-                          {new Date(
-                            submission.submittedAt,
-                          ).toLocaleDateString()}
+                          {new Date(submission.submittedAt).toLocaleDateString()}
                         </td>
                         <td className={styles.actionsCell}>
                           <button
                             className={styles.responseButton}
                             type="button"
                             onClick={() =>
-                              router.push(
-                                `/jobs/${job.id}/applicants/${submission.id}`,
-                              )
+                              router.push(`/jobs/${job.id}/applicants/${submission.id}`)
                             }
                           >
                             View Responses
@@ -250,13 +242,13 @@ export default function JobPage() {
                 </table>
               </div>
 
-              {/* Pagination */}
               {totalPages > 1 && (
                 <div className={styles.pagination}>
                   <button
                     onClick={() => goToPage(currentPage - 1)}
                     disabled={currentPage === 1}
                     className={styles.pageButton}
+                    type="button"
                   >
                     <Icon name="chevron_left" size={16} />
                   </button>
@@ -267,6 +259,7 @@ export default function JobPage() {
                     onClick={() => goToPage(currentPage + 1)}
                     disabled={currentPage === totalPages}
                     className={styles.pageButton}
+                    type="button"
                   >
                     <Icon name="chevron_right" size={16} />
                   </button>
@@ -275,15 +268,14 @@ export default function JobPage() {
 
               <div className={styles.pipelineFooter}>
                 <p>
-                  Showing {paginatedSubmissions.length} of{" "}
-                  {filteredSubmissions.length} applicant
-                  {filteredSubmissions.length === 1 ? "" : "s"}
+                  Showing {paginatedSubmissions.length} of {filteredSubmissions.length}{" "}
+                  applicant{filteredSubmissions.length === 1 ? "" : "s"}
                 </p>
               </div>
             </>
           )}
         </section>
-      </main>
+      </div>
 
       <CreateScreeningModal
         isOpen={isModalOpen}

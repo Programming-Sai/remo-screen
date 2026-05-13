@@ -1,9 +1,10 @@
-import { Job, Screening, Submission } from "@/types";
+import { AnalysisResult, Job, Screening, Submission } from "@/types";
 
 const STORAGE_KEYS = {
   JOBS: "aihrly_jobs",
   SCREENINGS: "aihrly_screenings",
   SUBMISSIONS: "aihrly_submissions",
+  ANALYSES: "aihrly_analyses",
 } as const;
 
 /* ---------------------------
@@ -120,6 +121,59 @@ export function getApplicantCount(jobId: string): number {
 }
 
 /* ---------------------------
+   ANALYSES (RECRUITER)
+--------------------------- */
+
+export function getAnalyses(): Record<string, AnalysisResult> {
+  if (typeof window === "undefined") return {};
+
+  try {
+    const data = localStorage.getItem(STORAGE_KEYS.ANALYSES);
+    if (!data) return {};
+
+    const parsed = JSON.parse(data);
+    return parsed && typeof parsed === "object" && !Array.isArray(parsed)
+      ? (parsed as Record<string, AnalysisResult>)
+      : {};
+  } catch {
+    return {};
+  }
+}
+
+export function getAnalysisBySubmissionId(
+  submissionId: string,
+): AnalysisResult | undefined {
+  return getAnalyses()[submissionId];
+}
+
+export function saveAnalysis(
+  submissionId: string,
+  analysis: AnalysisResult,
+): void {
+  if (typeof window === "undefined") return;
+
+  try {
+    const analyses = getAnalyses();
+    analyses[submissionId] = analysis;
+    localStorage.setItem(STORAGE_KEYS.ANALYSES, JSON.stringify(analyses));
+  } catch {
+    // ignore write errors for now
+  }
+}
+
+export function clearAnalysis(submissionId: string): void {
+  if (typeof window === "undefined") return;
+
+  try {
+    const analyses = getAnalyses();
+    delete analyses[submissionId];
+    localStorage.setItem(STORAGE_KEYS.ANALYSES, JSON.stringify(analyses));
+  } catch {
+    // ignore write errors for now
+  }
+}
+
+/* ---------------------------
    UTILITY
 --------------------------- */
 
@@ -129,4 +183,5 @@ export function clearAllStorage() {
   localStorage.removeItem(STORAGE_KEYS.JOBS);
   localStorage.removeItem(STORAGE_KEYS.SCREENINGS);
   localStorage.removeItem(STORAGE_KEYS.SUBMISSIONS);
+  localStorage.removeItem(STORAGE_KEYS.ANALYSES);
 }
