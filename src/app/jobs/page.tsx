@@ -1,19 +1,27 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 
 import { jobs } from "@/data/jobs";
 import CreateScreeningModal from "@/components/recruiter/CreateScreeningModal/CreateScreeningModal";
-import { getScreeningsByJob, getSubmissionsByJob } from "@/lib/storage";
+import { getSubmissionsByJob } from "@/lib/storage";
 
 import styles from "./page.module.css";
-import Link from "next/link";
+import { Header } from "@/components/ui/Header/Header";
+import { Icon } from "@/components/ui/Icon/Icon";
+
+const ITEMS_PER_PAGE = 9;
 
 export default function JobsPage() {
   const router = useRouter();
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [search, setSearch] = useState("");
+  const [displayCount, setDisplayCount] = useState(ITEMS_PER_PAGE);
+  const [isLoading, setIsLoading] = useState(false);
+  const [showBackToTop, setShowBackToTop] = useState(false); // Add this
+
+  const loaderRef = useRef<HTMLDivElement>(null);
 
   const filteredJobs = useMemo(() => {
     const query = search.trim().toLowerCase();
@@ -29,52 +37,57 @@ export default function JobsPage() {
     });
   }, [search]);
 
-  const totalScreenings = jobs.reduce(
-    (count, job) => count + getScreeningsByJob(job.id).length,
-    0,
-  );
+  const visibleJobs = useMemo(() => {
+    return filteredJobs.slice(0, displayCount);
+  }, [filteredJobs, displayCount]);
 
-  const totalApplicants = jobs.reduce(
-    (count, job) => count + getSubmissionsByJob(job.id).length,
-    0,
-  );
+  const hasMore = displayCount < filteredJobs.length;
 
-  const featuredJob = filteredJobs[0];
-  const secondaryJobs = filteredJobs.slice(1);
+  // Infinite scroll observer
+  useEffect(() => {
+    if (!hasMore) return;
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (entries[0].isIntersecting && !isLoading) {
+          setIsLoading(true);
+          setTimeout(() => {
+            setDisplayCount((prev) =>
+              Math.min(prev + ITEMS_PER_PAGE, filteredJobs.length),
+            );
+            setIsLoading(false);
+          }, 300);
+        }
+      },
+      { threshold: 0.1 },
+    );
+
+    if (loaderRef.current) {
+      observer.observe(loaderRef.current);
+    }
+
+    return () => observer.disconnect();
+  }, [hasMore, isLoading, filteredJobs.length]);
+
+  // Back to top visibility - SIMPLE VERSION
+  useEffect(() => {
+    const handleScroll = () => {
+      // Show button after scrolling down 300px
+      setShowBackToTop(window.scrollY > 300);
+    };
+
+    window.addEventListener("scroll", handleScroll);
+    return () => window.removeEventListener("scroll", handleScroll);
+  }, []);
+
+  // Scroll to top function
+  const scrollToTop = () => {
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  };
 
   return (
     <main className={styles.page}>
-      <nav className={styles.topNav}>
-        <div className={styles.brandBlock}>
-          <div className={styles.brandMark}>RS</div>
-          <div>
-            <p className={styles.brandName}>Remo Screen</p>
-            <p className={styles.brandSub}>Recruiter workspace</p>
-          </div>
-        </div>
-
-        <div className={styles.navLinks}>
-          <Link className={styles.navLinkActive} href="/jobs">
-            Jobs
-          </Link>
-          <a className={styles.navLink} href="#">
-            Talent
-          </a>
-          <a className={styles.navLink} href="#">
-            Analytics
-          </a>
-        </div>
-
-        <div className={styles.navActions}>
-          <button className={styles.iconButton} type="button">
-            Notifications
-          </button>
-          <button className={styles.iconButton} type="button">
-            Settings
-          </button>
-          <div className={styles.avatar}>R</div>
-        </div>
-      </nav>
+      <Header />
 
       <section className={styles.content}>
         <header className={styles.header}>
@@ -91,13 +104,14 @@ export default function JobsPage() {
             type="button"
             onClick={() => setIsModalOpen(true)}
           >
-            Create Phone Screening
+            <Icon name="add" />
+            <p>Create Phone Screening</p>
           </button>
         </header>
 
         <section className={styles.searchBar}>
           <div className={styles.searchInputWrap}>
-            <span className={styles.searchIcon}>⌕</span>
+            <Icon name="search" />
             <input
               className={styles.searchInput}
               value={search}
@@ -105,13 +119,9 @@ export default function JobsPage() {
               placeholder="Search jobs, locations, or type..."
             />
           </div>
-
-          <button className={styles.secondaryButton} type="button">
-            Filters
-          </button>
         </section>
 
-        {filteredJobs.length === 0 ? (
+        {visibleJobs.length === 0 ? (
           <section className={styles.emptyState}>
             <h2 className={styles.emptyTitle}>No jobs found</h2>
             <p className={styles.emptyText}>
@@ -121,73 +131,7 @@ export default function JobsPage() {
         ) : (
           <>
             <section className={styles.grid}>
-              {featuredJob && (
-                <article
-                  className={`${styles.card} ${styles.featuredCard}`}
-                  onClick={() => router.push(`/jobs/${featuredJob.id}`)}
-                >
-                  <div className={styles.cardTop}>
-                    <div className={styles.badgeRow}>
-                      <span className={styles.badgePrimary}>Engineering</span>
-                      <span className={styles.badgeSoft}>Urgent</span>
-                    </div>
-
-                    <button className={styles.moreButton} type="button">
-                      More
-                    </button>
-                  </div>
-
-                  <h2 className={styles.featuredTitle}>{featuredJob.title}</h2>
-
-                  <div className={styles.metricsGrid}>
-                    <div className={styles.metricBlock}>
-                      <span className={styles.metricLabel}>Location</span>
-                      <span className={styles.metricValue}>
-                        {featuredJob.location}
-                      </span>
-                    </div>
-
-                    <div className={styles.metricBlock}>
-                      <span className={styles.metricLabel}>Type</span>
-                      <span className={styles.metricValue}>
-                        {featuredJob.employmentType}
-                      </span>
-                    </div>
-
-                    <div className={styles.metricBlock}>
-                      <span className={styles.metricLabel}>Screenings</span>
-                      <span className={styles.metricValue}>
-                        {getScreeningsByJob(featuredJob.id).length}
-                      </span>
-                    </div>
-
-                    <div className={styles.metricBlock}>
-                      <span className={styles.metricLabel}>Applicants</span>
-                      <span className={styles.metricValue}>
-                        {getSubmissionsByJob(featuredJob.id).length}
-                      </span>
-                    </div>
-                  </div>
-
-                  <p className={styles.cardDesc}>{featuredJob.description}</p>
-
-                  <div className={styles.cardFooter}>
-                    <div className={styles.avatarStack}>
-                      <div className={styles.stackAvatar}>A</div>
-                      <div className={styles.stackAvatar}>B</div>
-                      <div className={styles.stackAvatar}>
-                        +{totalApplicants}
-                      </div>
-                    </div>
-
-                    <button className={styles.pipelineButton} type="button">
-                      View Pipeline
-                    </button>
-                  </div>
-                </article>
-              )}
-
-              {secondaryJobs.map((job) => (
+              {visibleJobs.map((job) => (
                 <article
                   key={job.id}
                   className={`${styles.card} ${styles.secondaryCard}`}
@@ -197,78 +141,63 @@ export default function JobsPage() {
                     <span className={styles.badgeSoft}>
                       {job.employmentType}
                     </span>
-                    <button className={styles.moreButton} type="button">
-                      More
-                    </button>
                   </div>
 
                   <h3 className={styles.secondaryTitle}>{job.title}</h3>
 
                   <div className={styles.compactMeta}>
                     <div className={styles.compactLine}>
-                      Location: {job.location}
+                      <Icon name="location_on" /> <p>{job.location}</p>
                     </div>
                     <div className={styles.compactLine}>
-                      Applicants: {getSubmissionsByJob(job.id).length}
+                      <Icon name="group" />
+                      <p>{getSubmissionsByJob(job.id).length}</p>
+                      Applicants
                     </div>
                   </div>
 
                   <div className={styles.secondaryFooter}>
-                    <span className={styles.updatedText}>
-                      Screenings: {getScreeningsByJob(job.id).length}
-                    </span>
-
                     <button className={styles.roundButton} type="button">
-                      →
+                      <Icon name="chevron_right" />
                     </button>
                   </div>
                 </article>
               ))}
-
-              <section className={`${styles.analyticsCard} ${styles.card}`}>
-                <div className={styles.analyticsCopy}>
-                  <h2 className={styles.analyticsTitle}>
-                    Screening efficiency is up 24%
-                  </h2>
-                  <p className={styles.analyticsText}>
-                    Your screening workflow is now tracking {totalScreenings}{" "}
-                    screenings and {totalApplicants} total applicant
-                    submissions.
-                  </p>
-
-                  <button className={styles.lightButton} type="button">
-                    View Analytics Report
-                  </button>
-                </div>
-
-                <div className={styles.chart}>
-                  <div className={styles.barLow} />
-                  <div className={styles.barMid} />
-                  <div className={styles.barHigh} />
-                  <div className={styles.barMax} />
-                </div>
-              </section>
             </section>
 
-            <div className={styles.moreWrap}>
-              <button className={styles.moreListingsButton} type="button">
-                Show more active listings
-              </button>
-            </div>
+            {/* Infinite scroll loader */}
+            {hasMore && (
+              <div ref={loaderRef} className={styles.loaderWrap}>
+                {isLoading ? (
+                  <div className={styles.loader}>Loading more jobs...</div>
+                ) : (
+                  <div className={styles.loader}>Scroll for more</div>
+                )}
+              </div>
+            )}
+
+            {/* Show "all loaded" message */}
+            {!hasMore && visibleJobs.length > 0 && (
+              <div className={styles.allLoaded}>
+                <Icon name="check_circle" opticalSize={20} />
+                <p>All {filteredJobs.length} jobs loaded</p>
+              </div>
+            )}
           </>
         )}
       </section>
-
-      <nav className={styles.bottomNav}>
-        <div className={styles.bottomActive}>Jobs</div>
-        <div className={styles.bottomItem}>Talent</div>
-        <div className={styles.bottomItem}>Analytics</div>
-      </nav>
 
       <CreateScreeningModal
         isOpen={isModalOpen}
         onClose={() => setIsModalOpen(false)}
       />
+
+      {/* Back to Top Button */}
+      {showBackToTop && (
+        <button onClick={scrollToTop} className={styles.backToTop}>
+          <Icon name="arrow_upward" />
+        </button>
+      )}
     </main>
   );
 }

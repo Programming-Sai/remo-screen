@@ -18,7 +18,7 @@
 .subtitle {
   margin-top: 4px;
 
-  font-size: 14px;
+  font-size: var(--text-md);
   color: #58423b;
 }
 
@@ -59,7 +59,7 @@
 }
 
 .label {
-  font-size: 14px;
+  font-size: var(--text-md);
   font-weight: 500;
 
   color: #58423b;
@@ -103,7 +103,7 @@
 }
 
 .generateText p {
-  font-size: 14px;
+  font-size: var(--text-md);
   line-height: 1.5;
 
   color: #58423b;
@@ -262,7 +262,7 @@
 }
 
 .audioPreview p {
-  font-size: 14px;
+  font-size: var(--text-md);
   font-weight: 600;
 }
 

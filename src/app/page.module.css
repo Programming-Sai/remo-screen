@@ -77,7 +77,7 @@
   width: 100%;
   max-width: 440px;
   gap: 16px;
-  font-size: 14px;
+  font-size: var(--text-md);
 }
 
 .ctas a {
@@ -86,7 +86,7 @@
   align-items: center;
   height: 44px;
   padding: 0 18px;
-  border-radius: 9999px;
+  border-radius: var(--radius-full);
   border: 1px solid transparent;
   transition: all 0.2s ease;
   cursor: pointer;

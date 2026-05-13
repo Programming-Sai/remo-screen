@@ -11,29 +11,6 @@ interface ScreeningShellProps {
 export default function ScreeningShell({ children }: ScreeningShellProps) {
   return (
     <div className={styles.page}>
-      <header className={styles.topBar}>
-        <div className={styles.topBarInner}>
-          <div className={styles.brand}>Screening Portal</div>
-
-          <div className={styles.topActions}>
-            <button
-              className={styles.iconButton}
-              type="button"
-              aria-label="Help"
-            >
-              ?
-            </button>
-            <button
-              className={styles.iconButton}
-              type="button"
-              aria-label="Account"
-            >
-              ⦿
-            </button>
-          </div>
-        </div>
-      </header>
-
       <main className={styles.main}>{children}</main>
 
       <footer className={styles.footer}>

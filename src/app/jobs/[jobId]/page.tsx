@@ -9,6 +9,7 @@ import CreateScreeningModal from "@/components/recruiter/CreateScreeningModal/Cr
 import { getScreeningByJobId, getSubmissionsByJob } from "@/lib/storage";
 
 import styles from "./page.module.css";
+import { Header } from "@/components/ui/Header/Header";
 
 export default function JobPage() {
   const params = useParams();
@@ -30,36 +31,7 @@ export default function JobPage() {
 
   return (
     <main className={styles.page}>
-      <header className={styles.topNav}>
-        <div className={styles.brandBlock}>
-          <div className={styles.brandMark}>RS</div>
-          <div>
-            <p className={styles.brandName}>Remo Screen</p>
-          </div>
-        </div>
-
-        <div className={styles.navLinks}>
-          <Link className={styles.navLinkActive} href="/jobs">
-            Jobs
-          </Link>
-          <a className={styles.navLink} href="#">
-            Talent
-          </a>
-          <a className={styles.navLink} href="#">
-            Analytics
-          </a>
-        </div>
-
-        <div className={styles.navActions}>
-          <button className={styles.iconButton} type="button">
-            Notifications
-          </button>
-          <button className={styles.iconButton} type="button">
-            Settings
-          </button>
-          <div className={styles.avatar}>R</div>
-        </div>
-      </header>
+      <Header />
 
       <main className={styles.content}>
         <div className={styles.breadcrumbs}>

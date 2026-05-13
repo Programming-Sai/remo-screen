@@ -1,0 +1,86 @@
+.topNav {
+  position: fixed;
+  inset: 0 0 auto 0;
+  z-index: 50;
+  height: 64px;
+  padding: 0 32px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background: var(--surface);
+  border-bottom: 1px solid var(--surface-container-high);
+}
+
+.brandBlock {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.brandMark {
+  width: 40px;
+  height: 40px;
+  border-radius: var(--radius-full);
+  display: grid;
+  place-items: center;
+  background: var(--primary);
+  color: var(--on-primary);
+  font-weight: 700;
+}
+
+.brandName {
+  font-size: 16px;
+  font-weight: 700;
+  line-height: 1.2;
+}
+
+.brandSub {
+  font-size: 12px;
+  color: var(--on-surface-variant);
+}
+
+.navLinks {
+  display: flex;
+  gap: 24px;
+  align-items: center;
+}
+
+.navLink,
+.navLinkActive {
+  font-size: var(--text-md);
+  font-weight: 600;
+  text-decoration: none;
+  color: var(--on-surface-variant);
+  padding-bottom: 4px;
+}
+
+.navLinkActive {
+  color: var(--primary);
+  border-bottom: 2px solid var(--primary);
+}
+
+.navActions {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.iconButton {
+  border: none;
+  background: transparent;
+  color: var(--on-surface-variant);
+  padding: 8px 12px;
+  border-radius: var(--radius-full);
+  cursor: pointer;
+}
+
+.avatar {
+  width: 32px;
+  height: 32px;
+  border-radius: var(--radius-full);
+  border: 1px solid var(--outline-variant);
+  display: grid;
+  place-items: center;
+  background: var(--surface);
+  font-weight: 600;
+}

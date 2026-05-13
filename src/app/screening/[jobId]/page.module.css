@@ -6,48 +6,6 @@
   color: var(--on-surface);
 }
 
-.topBar {
-  position: sticky;
-  top: 0;
-  z-index: 50;
-  background: var(--surface);
-  box-shadow: 0 1px 2px rgba(60, 64, 67, 0.15);
-}
-
-.topBarInner {
-  max-width: 1280px;
-  margin: 0 auto;
-  padding: 8px 32px;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-}
-
-.brand {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  font-size: 24px;
-  line-height: 1.3;
-  font-weight: 600;
-  color: var(--primary);
-}
-
-.topActions {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-}
-
-.iconButton {
-  border: none;
-  background: transparent;
-  color: var(--on-surface-variant);
-  padding: 8px;
-  border-radius: 9999px;
-  cursor: pointer;
-}
-
 .main {
   flex: 1;
   display: flex;
@@ -85,7 +43,7 @@
   align-items: center;
   gap: 8px;
   padding: 6px 12px;
-  border-radius: 9999px;
+  border-radius: var(--radius-full);
   background: rgba(255, 255, 255, 0.2);
   backdrop-filter: blur(10px);
   color: #ffffff;
@@ -140,7 +98,7 @@
 }
 
 .label {
-  font-size: 14px;
+  font-size: var(--text-md);
   font-weight: 500;
   color: var(--on-surface-variant);
 }
@@ -192,7 +150,7 @@
 .infoIcon {
   width: 36px;
   height: 36px;
-  border-radius: 9999px;
+  border-radius: var(--radius-full);
   display: grid;
   place-items: center;
   background: var(--secondary-container);
@@ -201,7 +159,7 @@
 }
 
 .infoTitle {
-  font-size: 14px;
+  font-size: var(--text-md);
   font-weight: 600;
   color: var(--on-surface);
 }
@@ -233,19 +191,19 @@
 
 .secondaryButton {
   padding: 12px 18px;
-  border-radius: 9999px;
+  border-radius: var(--radius-full);
   background: transparent;
   color: var(--secondary);
-  font-size: 14px;
+  font-size: var(--text-md);
   font-weight: 600;
 }
 
 .primaryButton {
   padding: 12px 24px;
-  border-radius: 9999px;
+  border-radius: var(--radius-full);
   background: var(--primary-container);
   color: var(--on-primary);
-  font-size: 14px;
+  font-size: var(--text-md);
   font-weight: 700;
   box-shadow: 0 10px 24px -12px rgba(168, 57, 16, 0.4);
 }
@@ -274,7 +232,7 @@
 }
 
 .progressLabel {
-  font-size: 14px;
+  font-size: var(--text-md);
   color: var(--on-surface-variant);
 }
 
@@ -287,14 +245,14 @@
 .progressTrack {
   width: 100%;
   height: 8px;
-  border-radius: 9999px;
+  border-radius: var(--radius-full);
   overflow: hidden;
   background: var(--surface-container-high);
 }
 
 .progressFill {
   height: 100%;
-  border-radius: 9999px;
+  border-radius: var(--radius-full);
   background: var(--primary-container);
 }
 
@@ -339,7 +297,7 @@
 .audioIconWrap {
   width: 56px;
   height: 56px;
-  border-radius: 9999px;
+  border-radius: var(--radius-full);
   display: grid;
   place-items: center;
   background: rgba(216, 218, 220, 0.5);
@@ -348,7 +306,7 @@
 }
 
 .audioTitle {
-  font-size: 14px;
+  font-size: var(--text-md);
   font-weight: 500;
   color: var(--on-surface-variant);
   text-align: center;
@@ -376,7 +334,7 @@
 }
 
 .tipText {
-  font-size: 14px;
+  font-size: var(--text-md);
   line-height: 1.5;
 }
 
@@ -397,7 +355,7 @@
 .completeIcon {
   width: 96px;
   height: 96px;
-  border-radius: 9999px;
+  border-radius: var(--radius-full);
   display: grid;
   place-items: center;
   background: var(--secondary-container);
@@ -452,10 +410,10 @@
 
 .completeButton {
   border: none;
-  border-radius: 9999px;
+  border-radius: var(--radius-full);
   background: var(--primary-container);
   color: var(--on-primary);
-  font-size: 14px;
+  font-size: var(--text-md);
   font-weight: 700;
   padding: 12px 20px;
   cursor: pointer;
@@ -488,7 +446,7 @@
 }
 
 .metaTitle {
-  font-size: 14px;
+  font-size: var(--text-md);
   font-weight: 700;
   color: var(--on-surface);
 }

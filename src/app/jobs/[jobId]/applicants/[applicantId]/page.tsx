@@ -8,6 +8,7 @@ import { getScreeningByJobId, getSubmissionById } from "@/lib/storage";
 
 import styles from "./page.module.css";
 import Link from "next/link";
+import { Header } from "@/components/ui/Header/Header";
 
 type AnalysisResult = {
   summary: string;
@@ -57,37 +58,8 @@ export default function ApplicantPage() {
   }
 
   return (
-    <main className={styles.page}>
-      <header className={styles.topNav}>
-        <div className={styles.brandBlock}>
-          <div className={styles.brandMark}>RS</div>
-          <div>
-            <p className={styles.brandName}>Remo Screen</p>
-          </div>
-        </div>
-
-        <div className={styles.navLinks}>
-          <Link className={styles.navLinkActive} href="/jobs">
-            Jobs
-          </Link>
-          <Link className={styles.navLink} href="#">
-            Talent
-          </Link>
-          <Link className={styles.navLink} href="#">
-            Analytics
-          </Link>
-        </div>
-
-        <div className={styles.navActions}>
-          <button className={styles.iconButton} type="button">
-            Notifications
-          </button>
-          <button className={styles.iconButton} type="button">
-            Settings
-          </button>
-          <div className={styles.avatar}>R</div>
-        </div>
-      </header>
+    <div className={styles.page}>
+      <Header />
 
       <main className={styles.content}>
         <div className={styles.breadcrumbs}>
@@ -263,18 +235,6 @@ export default function ApplicantPage() {
           </aside>
         </div>
       </main>
-
-      <nav className={styles.bottomNav}>
-        <Link className={styles.bottomItem} href="/jobs">
-          Jobs
-        </Link>
-        <a className={styles.bottomActive} href="#">
-          Talent
-        </a>
-        <a className={styles.bottomItem} href="#">
-          Analytics
-        </a>
-      </nav>
-    </main>
+    </div>
   );
 }
