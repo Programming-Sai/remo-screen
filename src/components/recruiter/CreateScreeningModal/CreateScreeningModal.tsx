@@ -13,6 +13,7 @@ import { Question, ResponseType, Screening } from "@/types";
 import { saveScreening } from "@/lib/storage";
 
 import styles from "./CreateScreeningModal.module.css";
+import { useToast } from "@/contexts/ToastContext";
 
 interface CreateScreeningModalProps {
   isOpen: boolean;
@@ -25,17 +26,12 @@ export default function CreateScreeningModal({
   jobId,
   onClose,
 }: CreateScreeningModalProps) {
-  const router = useRouter();
-
   const [selectedJobId, setSelectedJobId] = useState(jobId ?? "");
 
   const [questions, setQuestions] = useState<Question[]>([]);
 
   const [loading, setLoading] = useState(false);
-
-  const selectedJob = useMemo(() => {
-    return jobs.find((job) => job.id === selectedJobId);
-  }, [selectedJobId]);
+  const { showToast } = useToast();
 
   function handleGenerateQuestions() {
     if (!selectedJobId) return;
@@ -98,6 +94,11 @@ export default function CreateScreeningModal({
 
   function handleSaveScreening() {
     if (!selectedJobId || questions.length === 0) {
+      showToast({
+        type: "error",
+        title: "Missing information",
+        message: "Please select a job and add questions.",
+      });
       return;
     }
 
@@ -110,9 +111,20 @@ export default function CreateScreeningModal({
 
     saveScreening(screening);
 
-    onClose();
-
-    router.push(`/jobs/${selectedJobId}`);
+    onClose(); // close modal
+    const jobUrl = `/screening/${selectedJobId}`;
+    const fullUrl = window.location.origin + jobUrl;
+    showToast({
+      type: "success",
+      title: "Screening created",
+      message: "You can now share the link with candidates.",
+      actionLabel: "View Job",
+      onAction: () => {
+        // alert(`Action triggered! ${jobUrl}`);
+        window.open(fullUrl, "_blank");
+      },
+      duration: 10000,
+    });
   }
 
   return (

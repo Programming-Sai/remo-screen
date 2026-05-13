@@ -7,6 +7,7 @@ import { useParams, useRouter } from "next/navigation";
 import { jobs } from "@/data/jobs";
 import CreateScreeningModal from "@/components/recruiter/CreateScreeningModal/CreateScreeningModal";
 import { getScreeningByJobId, getSubmissionsByJob } from "@/lib/storage";
+import { useToast } from "@/contexts/ToastContext";
 
 import styles from "./page.module.css";
 import { Header } from "@/components/ui/Header/Header";
@@ -20,6 +21,7 @@ export default function JobPage() {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
   const [searchTerm, setSearchTerm] = useState("");
+  const { showToast } = useToast();
 
   const jobId = params?.jobId as string;
 
@@ -58,6 +60,15 @@ export default function JobPage() {
 
   const goToPage = (page: number) => {
     setCurrentPage(Math.max(1, Math.min(page, totalPages)));
+  };
+
+  const handleCopy = () => {
+    navigator.clipboard.writeText(screeningLink);
+    showToast({
+      type: "success",
+      title: "Link copied",
+      message: "Share this link with candidates.",
+    });
   };
 
   if (!job) return <p>Job not found</p>;
@@ -122,7 +133,7 @@ export default function JobPage() {
                 <button
                   className={styles.copyButton}
                   type="button"
-                  onClick={() => navigator.clipboard.writeText(screeningLink)}
+                  onClick={() => handleCopy()}
                 >
                   Copy
                 </button>

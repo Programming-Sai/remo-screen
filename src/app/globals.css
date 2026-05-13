@@ -86,3 +86,20 @@ a {
   color: inherit;
   text-decoration: none;
 }
+
+.toast-container {
+  position: fixed;
+  bottom: 24px;
+  left: 24px;
+  z-index: 1000;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  width: 100%;
+  max-width: 400px;
+  pointer-events: none;
+}
+
+.toast-container > * {
+  pointer-events: auto;
+}

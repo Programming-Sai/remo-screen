@@ -15,6 +15,7 @@ import ScreeningShell from "@/components/candidate/ScreeningShell/ScreeningShell
 import ScreeningWelcomeStep from "@/components/candidate/ScreeningWelcomeStep/ScreeningWelcomeStep";
 import ScreeningQuestionStep from "@/components/candidate/ScreeningQuestionStep/ScreeningQuestionStep";
 import ScreeningCompletionStep from "@/components/candidate/ScreeningCompletionStep/ScreeningCompletionStep";
+import { useToast } from "@/contexts/ToastContext";
 
 type ScreenState = "welcome" | "question" | "complete";
 
@@ -31,6 +32,7 @@ export default function ScreeningPage() {
   const [candidateEmail, setCandidateEmail] = useState("");
   const [answers, setAnswers] = useState<Record<string, string>>({});
   const [error, setError] = useState<string>("");
+  const { showToast } = useToast();
 
   if (!job) return <p>Job not found</p>;
   if (!screening) return <p>No screening found</p>;
@@ -58,9 +60,11 @@ export default function ScreeningPage() {
     );
 
     if (hasExisting) {
-      setError(
-        "A submission with this email already exists. Please use a different email address.",
-      );
+      showToast({
+        type: "error",
+        title: "Duplicate submission",
+        message: "An application with this email already exists.",
+      });
       return;
     }
 
